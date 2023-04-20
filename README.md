@@ -36,10 +36,10 @@ python main.py --model_id test_run
 We train the model on some datasets in the same domain to see whether it could work.
 
 Action items:
-*   Allen: Focus on modeling. Adapt the code to a form that is more suitable for pre-training and tuning hyperprameters. Develop models.
-*   Guanchu: Focus on efficency. Current task: implment and test data parallel
+*   Allen: Focus on modeling. Adapt the code to a form that is more suitable for pre-training and testing/fine-tuning on downstream time series.
+*   Guanchu: Focus on efficency. Current task: implement and test data parallel
 *   Jiayi: Focus on data. Collect and process data into a format that can be directly loaded by the data loader. Do manual cleaning or filtering if needed.
-*   Henry: Provide guidance and trouble shooting. Identifdy the potential good data sources, time series prerpocessing experiences, etc.
+*   Henry: Provide guidance and trouble shooting. Identifdy the potential good data sources, share time series prerpocessing experiences, etc.
 *   Daochen: Design the whole workflow and organize the efforts.
 
 Tentative author order if we submit a paper later:
