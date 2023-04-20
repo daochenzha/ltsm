@@ -14,6 +14,7 @@ pip3 install -r requirements.txt
 Let's maintain a table of the datasets. We just put datasets in our server for now without uploading to Github.
 
 [EEG (3.4GB)](https://www.physionet.org/content/eegmmidb/1.0.0/)
+[ECG (33GB)](https://physionet.org/about/database/)
 
 ## Quick start
 Get some example data (in datalab1 at Rice):
