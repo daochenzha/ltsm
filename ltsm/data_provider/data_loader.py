@@ -1,36 +1,45 @@
 import os
 import numpy as np
 import pandas as pd
-import os
 import torch
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler
-from utils.timefeatures import time_features
-from utils.tools import convert_tsf_to_dataframe
 import warnings
 from pathlib import Path
+
+from ltsm.utils.timefeatures import time_features
+from ltsm.utils.tools import convert_tsf_to_dataframe
+
+
 
 warnings.filterwarnings('ignore')
 
 class Dataset_ETT_hour(Dataset):
-    def __init__(self, root_path, flag='train', size=None,
-                 features='S', data_path='ETTh1.csv',
-                 target='OT', scale=True, timeenc=0, freq='h', 
-                 percent=100, max_len=-1, train_all=False):
-        # size [seq_len, label_len, pred_len]
+    def __init__(
+        self,
+        data_path,
+        split='train',
+        size=None,
+        features='S',
+        target='OT',
+        scale=True,
+        timeenc=0,
+        freq='h', 
+        percent=100,
+        max_len=-1,
+        train_all=False,
+    ):
+        # size [seq_len, pred_len]
         # info
         if size == None:
             self.seq_len = 24 * 4 * 4
-            self.label_len = 24 * 4
             self.pred_len = 24 * 4
         else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
+            self.seq_len, self.pred_len = size
         # init
-        assert flag in ['train', 'test', 'val']
+        assert split in ['train', 'test', 'val']
         type_map = {'train': 0, 'val': 1, 'test': 2}
-        self.set_type = type_map[flag]
+        self.set_type = type_map[split]
 
         self.percent = percent
         self.features = features
@@ -39,7 +48,6 @@ class Dataset_ETT_hour(Dataset):
         self.timeenc = timeenc
         self.freq = freq
 
-        self.root_path = root_path
         self.data_path = data_path
         self.__read_data__()
 
@@ -51,8 +59,7 @@ class Dataset_ETT_hour(Dataset):
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
+        df_raw = pd.read_csv(self.data_path)
 
         border1s = [0, 12 * 30 * 24 - self.seq_len, 12 * 30 * 24 + 4 * 30 * 24 - self.seq_len]
         border2s = [12 * 30 * 24, 12 * 30 * 24 + 4 * 30 * 24, 12 * 30 * 24 + 8 * 30 * 24]
@@ -96,8 +103,8 @@ class Dataset_ETT_hour(Dataset):
         s_begin = index % self.tot_len
         
         s_end = s_begin + self.seq_len
-        r_begin = s_end - self.label_len
-        r_end = r_begin + self.label_len + self.pred_len
+        r_begin = s_end
+        r_end = r_begin + self.pred_len
         seq_x = self.data_x[s_begin:s_end, feat_id:feat_id+1]
         seq_y = self.data_y[r_begin:r_end, feat_id:feat_id+1]
         seq_x_mark = self.data_stamp[s_begin:s_end]
@@ -112,24 +119,31 @@ class Dataset_ETT_hour(Dataset):
         return self.scaler.inverse_transform(data)
 
 class Dataset_ETT_minute(Dataset):
-    def __init__(self, root_path, flag='train', size=None,
-                 features='S', data_path='ETTm1.csv',
-                 target='OT', scale=True, timeenc=0, freq='t', 
-                 percent=100, max_len=-1, train_all=False):
-        # size [seq_len, label_len, pred_len]
+    def __init__(
+        self,
+        data_path,
+        split='train',
+        size=None,
+        features='S',
+        target='OT',
+        scale=True,
+        timeenc=0,
+        freq='t', 
+        percent=100,
+        max_len=-1,
+        train_all=False
+    ):
+        # size [seq_len, pred_len]
         # info
         if size == None:
             self.seq_len = 24 * 4 * 4
-            self.label_len = 24 * 4
             self.pred_len = 24 * 4
         else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
+            self.seq_len, self.pred_len = size
         # init
-        assert flag in ['train', 'test', 'val']
+        assert split in ['train', 'test', 'val']
         type_map = {'train': 0, 'val': 1, 'test': 2}
-        self.set_type = type_map[flag]
+        self.set_type = type_map[split]
 
         self.features = features
         self.target = target
@@ -138,7 +152,6 @@ class Dataset_ETT_minute(Dataset):
         self.freq = freq
         self.percent = percent
 
-        self.root_path = root_path
         self.data_path = data_path
         self.__read_data__()
 
@@ -147,8 +160,7 @@ class Dataset_ETT_minute(Dataset):
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
+        df_raw = pd.read_csv(self.data_path)
 
         border1s = [0, 12 * 30 * 24 * 4 - self.seq_len, 12 * 30 * 24 * 4 + 4 * 30 * 24 * 4 - self.seq_len]
         border2s = [12 * 30 * 24 * 4, 12 * 30 * 24 * 4 + 4 * 30 * 24 * 4, 12 * 30 * 24 * 4 + 8 * 30 * 24 * 4]
@@ -193,8 +205,8 @@ class Dataset_ETT_minute(Dataset):
         s_begin = index % self.tot_len
         
         s_end = s_begin + self.seq_len
-        r_begin = s_end - self.label_len
-        r_end = r_begin + self.label_len + self.pred_len
+        r_begin = s_end
+        r_end = r_begin + self.pred_len
         seq_x = self.data_x[s_begin:s_end, feat_id:feat_id+1]
         seq_y = self.data_y[r_begin:r_end, feat_id:feat_id+1]
         seq_x_mark = self.data_stamp[s_begin:s_end]
@@ -209,24 +221,31 @@ class Dataset_ETT_minute(Dataset):
         return self.scaler.inverse_transform(data)
 
 class Dataset_Custom(Dataset):
-    def __init__(self, root_path, flag='train', size=None,
-                 features='S', data_path='ETTh1.csv',
-                 target='OT', scale=True, timeenc=0, freq='h',
-                 percent=10, max_len=-1, train_all=False):
-        # size [seq_len, label_len, pred_len]
+    def __init__(
+        self,
+        data_path,
+        split='train',
+        size=None,
+        features='S',
+        target='OT',
+        scale=True,
+        timeenc=0,
+        freq='h',
+        percent=10,
+        max_len=-1,
+        train_all=False
+    ):
+        # size [seq_len, pred_len]
         # info
         if size == None:
             self.seq_len = 24 * 4 * 4
-            self.label_len = 24 * 4
             self.pred_len = 24 * 4
         else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
+            self.seq_len, self.pred_len = size
         # init
-        assert flag in ['train', 'test', 'val']
+        assert split in ['train', 'test', 'val']
         type_map = {'train': 0, 'val': 1, 'test': 2}
-        self.set_type = type_map[flag]
+        self.set_type = type_map[split]
 
         self.features = features
         self.target = target
@@ -235,7 +254,6 @@ class Dataset_Custom(Dataset):
         self.freq = freq
         self.percent = percent
 
-        self.root_path = root_path
         self.data_path = data_path
         self.__read_data__()
         
@@ -244,8 +262,7 @@ class Dataset_Custom(Dataset):
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
+        df_raw = pd.read_csv(self.data_path)
 
         '''
         df_raw.columns: ['date', ...(other features), target feature]
@@ -300,8 +317,8 @@ class Dataset_Custom(Dataset):
         s_begin = index % self.tot_len
         
         s_end = s_begin + self.seq_len
-        r_begin = s_end - self.label_len
-        r_end = r_begin + self.label_len + self.pred_len
+        r_begin = s_end
+        r_end = r_begin + self.pred_len
         seq_x = self.data_x[s_begin:s_end, feat_id:feat_id+1]
         seq_y = self.data_y[r_begin:r_end, feat_id:feat_id+1]
         seq_x_mark = self.data_stamp[s_begin:s_end]
@@ -317,22 +334,30 @@ class Dataset_Custom(Dataset):
     
 
 class Dataset_Pred(Dataset):
-    def __init__(self, root_path, flag='pred', size=None,
-                 features='S', data_path='ETTh1.csv',
-                 target='OT', scale=True, inverse=False, timeenc=0, freq='15min', cols=None,
-                 percent=None, train_all=False):
-        # size [seq_len, label_len, pred_len]
+    def __init__(
+        self,
+        data_path,
+        split='pred',
+        size=None,
+        features='S',
+        target='OT',
+        scale=True,
+        inverse=False,
+        timeenc=0,
+        freq='15min',
+        cols=None,
+        percent=None,
+        train_all=False,
+    ):
+        # size [seq_len, pred_len]
         # info
         if size == None:
             self.seq_len = 24 * 4 * 4
-            self.label_len = 24 * 4
             self.pred_len = 24 * 4
         else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
+            self.seq_len, self.pred_len = size
         # init
-        assert flag in ['pred']
+        assert split in ['pred']
 
         self.features = features
         self.target = target
@@ -341,14 +366,12 @@ class Dataset_Pred(Dataset):
         self.timeenc = timeenc
         self.freq = freq
         self.cols = cols
-        self.root_path = root_path
         self.data_path = data_path
         self.__read_data__()
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
+        df_raw = pd.read_csv(self.data_path)
         '''
         df_raw.columns: ['date', ...(other features), target feature]
         '''
@@ -403,14 +426,14 @@ class Dataset_Pred(Dataset):
     def __getitem__(self, index):
         s_begin = index
         s_end = s_begin + self.seq_len
-        r_begin = s_end - self.label_len
-        r_end = r_begin + self.label_len + self.pred_len
+        r_begin = s_end
+        r_end = r_begin + self.pred_len
 
         seq_x = self.data_x[s_begin:s_end]
         if self.inverse:
-            seq_y = self.data_x[r_begin:r_begin + self.label_len]
+            seq_y = self.data_x[r_begin:r_begin]
         else:
-            seq_y = self.data_y[r_begin:r_begin + self.label_len]
+            seq_y = self.data_y[r_begin:r_begin]
         seq_x_mark = self.data_stamp[s_begin:s_end]
         seq_y_mark = self.data_stamp[r_begin:r_end]
 
@@ -424,31 +447,38 @@ class Dataset_Pred(Dataset):
 
 
 class Dataset_TSF(Dataset):
-    def __init__(self, root_path, flag='train', size=None,
-                 features='S', data_path=None,
-                 target='OT', scale=True, timeenc=0, freq='Daily',
-                 percent=10, max_len=-1, train_all=False):
+    def __init__(self,
+        data_path,
+        split='train',
+        size=None,
+        features='S',
+        target='OT',
+        scale=True,
+        timeenc=0,
+        freq='Daily',
+        percent=10,
+        max_len=-1,
+        train_all=False,
+    ):
         
         self.train_all = train_all
         
         self.seq_len = size[0]
         self.pred_len = size[2]
         type_map = {'train': 0, 'val': 1, 'test': 2}
-        self.set_type = type_map[flag]
+        self.set_type = type_map[split]
         
         self.percent = percent
         self.max_len = max_len
         if self.max_len == -1:
             self.max_len = 1e8
 
-        self.root_path = root_path
         self.data_path = data_path
         self.timeseries = self.__read_data__()
 
 
     def __read_data__(self):
-        df, frequency, forecast_horizon, contain_missing_values, contain_equal_length = convert_tsf_to_dataframe(os.path.join(self.root_path,
-                                                                                                                              self.data_path))
+        df, frequency, forecast_horizon, contain_missing_values, contain_equal_length = convert_tsf_to_dataframe(self.data_path)
         self.freq = frequency
         def dropna(x):
             return x[~np.isnan(x)]
