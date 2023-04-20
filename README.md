@@ -46,7 +46,7 @@ Tentative author order if we submit a paper later:
 Allen*, Guanchu*, Jiayi*, Henry*, Daochen*, [some others], Xia Hu
 
 Note:
-1. * means equal contribution
+1. \* means equal contribution
 2. The order of first three authors are subject to change based on actual contribution.
 3. Anyone could be removed if not contributing, as suggested by Dr. Hu.
 4. [some others] are reserved for Stage 2 (no *). If Stage 1 works out, it is very likely we need more help, e.g., data.
