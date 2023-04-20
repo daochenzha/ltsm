@@ -15,9 +15,9 @@ Let's maintain a table of the datasets. We just put datasets in our server for n
 
 [EEG (3.4GB)](https://www.physionet.org/content/eegmmidb/1.0.0/)
 
-[ECG (33GB)](https://physionet.org/content/fecgsyndb/1.0.0/)
+Pretrain: [ECG (33GB)](https://physionet.org/content/fecgsyndb/1.0.0/)
 
-[ECG (5GB)](https://physionet.org/content/ecg-arrhythmia/1.0.0/)
+Fine-tune and Testing: [ECG (5GB)](https://physionet.org/content/ecg-arrhythmia/1.0.0/)
 
 
 ## Quick start
