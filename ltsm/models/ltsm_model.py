@@ -4,15 +4,15 @@ import torch.nn as nn
 from torch import optim
 
 from transformers.models.gpt2.modeling_gpt2 import GPT2Model
-from transformers import BertTokenizer, BertModel
-from einops import rearrange
-from embed import DataEmbedding, DataEmbedding_wo_time
 from transformers.models.gpt2.configuration_gpt2 import GPT2Config
+from einops import rearrange
 
-class GPT4TS(nn.Module):
+from ltsm.models.embed import DataEmbedding, DataEmbedding_wo_time
+
+class LTSM(nn.Module):
     
     def __init__(self, configs, device):
-        super(GPT4TS, self).__init__()
+        super().__init__()
         self.is_gpt = configs.is_gpt
         self.patch_size = configs.patch_size
         self.pretrain = configs.pretrain
@@ -48,7 +48,7 @@ class GPT4TS(nn.Module):
         self.cnt = 0
 
 
-    def forward(self, x, itr):
+    def forward(self, x):
         B, L, M = x.shape
 
         means = x.mean(1, keepdim=True).detach()
