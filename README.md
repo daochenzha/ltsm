@@ -17,6 +17,9 @@ Let's maintain a table of the datasets. We just put datasets in our server for n
 
 [ECG (33GB)](https://physionet.org/content/fecgsyndb/1.0.0/)
 
+[ECG (5GB)](https://physionet.org/content/ecg-arrhythmia/1.0.0/)
+
+
 ## Quick start
 Get some example data (in datalab1 at Rice):
 
