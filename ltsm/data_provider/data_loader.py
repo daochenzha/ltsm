@@ -593,7 +593,6 @@ class Dataset_Custom_List(Dataset):
         self.data_path = data_path
         self.__read_data__()
         
-        # self.enc_in = self.data_x.shape[-1]
         self.tot_len = self.len_index[-1]
 
     def __read_data__(self):
