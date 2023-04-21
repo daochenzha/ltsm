@@ -6,7 +6,6 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler
 import warnings
 from pathlib import Path
-import random
 
 from ltsm.utils.timefeatures import time_features
 from ltsm.utils.tools import convert_tsf_to_dataframe
@@ -588,8 +587,6 @@ class Dataset_Custom_List(Dataset):
         self.timeenc = timeenc
         self.freq = freq
         self.percent = percent
-
-        random.shuffle(data_path)
         self.data_path = data_path
         self.__read_data__()
         

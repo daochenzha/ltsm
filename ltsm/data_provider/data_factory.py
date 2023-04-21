@@ -4,6 +4,7 @@ from ltsm.data_provider.data_loader import (
     Dataset_TSF,
     Dataset_ETT_hour,
     Dataset_ETT_minute,
+    Dataset_Custom_List,
 )
 
 from torch.utils.data import DataLoader
@@ -13,8 +14,12 @@ data_dict = {
     'tsf_data': Dataset_TSF,
     'ett_h': Dataset_ETT_hour,
     'ett_m': Dataset_ETT_minute,
+    'custom_list': Dataset_Custom_List,
 }
 
+data_paths = {
+    'eeg_train' : [],
+}
 
 def get_data_loader(config, split, drop_last_test=True, train_all=False):
     Data = data_dict[config.data]
@@ -44,6 +49,9 @@ def get_data_loader(config, split, drop_last_test=True, train_all=False):
         batch_size = config.batch_size
         freq = config.freq
 
+    if config.data == 'custom_list':
+        config.data_path = data_paths[config.data_path]
+    
     data_set = Data(
         data_path=config.data_path,
         split=split,
