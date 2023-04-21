@@ -6,6 +6,7 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler
 import warnings
 from pathlib import Path
+import random
 
 from ltsm.utils.timefeatures import time_features
 from ltsm.utils.tools import convert_tsf_to_dataframe
@@ -552,3 +553,80 @@ class Dataset_TSF(Dataset):
             return min(self.max_len, self.tot_len)
         else:
             return self.tot_len
+
+
+class Dataset_Custom_List(Dataset):
+    def __init__(
+        self,
+        data_path=[],
+        split='train',
+        size=None,
+        features='S',
+        target='OT',
+        scale=True,
+        timeenc=0,
+        freq='h',
+        percent=10,
+        max_len=-1,
+        train_all=False
+    ):
+        # size [seq_len, pred_len]
+        # info
+        if size == None:
+            self.seq_len = 24 * 4 * 4
+            self.pred_len = 24 * 4
+        else:
+            self.seq_len, self.pred_len = size
+        # init
+        assert split in ['train', 'test', 'val']
+        type_map = {'train': 0, 'val': 1, 'test': 2}
+        self.set_type = type_map[split]
+
+        self.features = features
+        self.target = target
+        self.scale = scale
+        self.timeenc = timeenc
+        self.freq = freq
+        self.percent = percent
+
+        random.shuffle(data_path)
+        self.data_path = data_path
+        self.__read_data__()
+        
+        # self.enc_in = self.data_x.shape[-1]
+        self.tot_len = self.len_index[-1]
+
+    def __read_data__(self):
+        self.scaler = StandardScaler()
+        self.data_all = []
+        self.len_index = [0]
+        self.tot_len = 0
+        for path in self.data_path:
+            df_raw = pd.read_csv(path)
+            df_raw = df_raw.dropna()
+            df_raw = df_raw.values
+            if self.scale:
+                df_raw = self.scaler.fit_transform(df_raw)
+            self.data_all.append(df_raw)
+            self.len_index.append(self.len_index[-1] + len(df_raw) - self.seq_len - self.pred_len + 1)
+
+    def __getitem__(self, index):
+        i = 0
+        for i in range(len(self.len_index)):
+            if index >= self.len_index[i]:
+                break
+        s_begin = index - self.len_index[i]
+        s_end = s_begin + self.seq_len
+        r_begin = s_end
+        r_end = r_begin + self.pred_len
+
+        seq_x = self.data_all[i][s_begin:s_end]
+        seq_y = self.data_all[i][r_begin:r_end]
+
+        return seq_x, seq_y, None, None
+
+    def __len__(self):
+        return self.tot_len
+
+    def inverse_transform(self, data):
+        return self.scaler.inverse_transform(data)
