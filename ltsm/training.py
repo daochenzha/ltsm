@@ -11,6 +11,7 @@ def train(
     vali_loader,
     save_dir,
     config,
+    training_args,
     device,
 ):
     accelerator = Accelerator()
@@ -86,7 +87,8 @@ def train(
             print("lr = {:.10f}".format(model_optim.param_groups[0]['lr']))
         else:
             adjust_learning_rate(model_optim, epoch + 1, config)
-        early_stopping(vali_loss, model, save_dir)
+
+        early_stopping(vali_loss, model, save_dir, training_args.local_rank)
         if early_stopping.early_stop:
             print("Early stopping")
             break
@@ -160,11 +162,13 @@ class EarlyStopping:
         self.val_loss_min = np.Inf
         self.delta = delta
 
-    def __call__(self, val_loss, model, path):
+    def __call__(self, val_loss, model, path, local_rank=0):
         score = -val_loss
         if self.best_score is None:
             self.best_score = score
-            self.save_checkpoint(val_loss, model, path)
+            if local_rank == 0:
+                self.save_checkpoint(val_loss, model, path)
+
         elif score < self.best_score + self.delta:
             self.counter += 1
             print(f'EarlyStopping counter: {self.counter} out of {self.patience}')
@@ -172,7 +176,10 @@ class EarlyStopping:
                 self.early_stop = True
         else:
             self.best_score = score
-            self.save_checkpoint(val_loss, model, path)
+
+            if local_rank == 0:
+                self.save_checkpoint(val_loss, model, path)
+
             self.counter = 0
 
     def save_checkpoint(self, val_loss, model, path):
