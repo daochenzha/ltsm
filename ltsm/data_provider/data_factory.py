@@ -17,9 +17,18 @@ data_dict = {
     'custom_list': Dataset_Custom_List,
 }
 
-data_paths = {
-    'eeg_train' : [],
-}
+def data_paths(dataset):
+    '''
+    args:
+        dataset: string
+            eeg_train, eeg_test, eeg_val, 
+            ecg_train, ecg_test, ecg_val, 
+            ecg_small_train, ecg_small_test, ecg_small_val
+    return:
+        data paths: list of strings
+    '''
+    pass
+    
 
 def get_data_loader(config, split, drop_last_test=True, train_all=False):
     Data = data_dict[config.data]
@@ -50,7 +59,7 @@ def get_data_loader(config, split, drop_last_test=True, train_all=False):
         freq = config.freq
 
     if config.data == 'custom_list':
-        config.data_path = data_paths[config.data_path]
+        config.data_path = data_paths(config.data_path)
     
     data_set = Data(
         data_path=config.data_path,
