@@ -3,7 +3,8 @@ import time
 import numpy as np
 import torch
 import torch.nn as nn
- 
+
+from accelerate import Accelerator
 
 def train(
     train_loader,
@@ -12,6 +13,9 @@ def train(
     config,
     device,
 ):
+    accelerator = Accelerator()
+    device = accelerator.device
+
     if config.model == 'PatchTST':
         from ltsm.models.PatchTST import PatchTST
         model = PatchTST(config, device)
@@ -31,6 +35,8 @@ def train(
     criterion = nn.MSELoss()
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model_optim, T_max=config.tmax, eta_min=1e-8)
 
+    model, model_optim, train_loader = accelerator.prepare(model, model_optim, train_loader)
+
     for epoch in range(config.train_epochs):
 
         iter_count = 0
@@ -42,11 +48,11 @@ def train(
             batch_x = batch_x.float().to(device)
 
             batch_y = batch_y.float().to(device)
-            
+
             # The following two are not used, but could be useful
             batch_x_mark = batch_x_mark.float().to(device)
             batch_y_mark = batch_y_mark.float().to(device)
-            
+
             outputs = model(batch_x)
 
             loss = criterion(outputs, batch_y)
@@ -59,10 +65,9 @@ def train(
                 print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
                 iter_count = 0
                 time_now = time.time()
-            loss.backward()
+            accelerator.backward(loss)
             model_optim.step()
 
-        
         print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
 
         train_loss = np.average(train_loss)
@@ -111,7 +116,7 @@ def vali(
             batch_y_mark = batch_y_mark.float().to(device)
 
             outputs = model(batch_x)
-            
+
             pred = outputs.detach().cpu()
             true = batch_y.detach().cpu()
 
