@@ -5,6 +5,7 @@ from ltsm.data_provider.data_loader import (
     Dataset_ETT_hour,
     Dataset_ETT_minute,
     Dataset_Custom_List,
+    Dataset_Custom_List_TS
 )
 
 from torch.utils.data import DataLoader
@@ -15,12 +16,14 @@ data_dict = {
     'ett_h': Dataset_ETT_hour,
     'ett_m': Dataset_ETT_minute,
     'custom_list': Dataset_Custom_List,
+    'custom_list_time_stamp': Dataset_Custom_List_TS,
 }
 
 def data_paths(dataset):
     '''
     args:
         dataset: string
+            eeg_all, ecg_all, ecg_small_all,
             eeg_train, eeg_test, eeg_val, 
             ecg_train, ecg_test, ecg_val, 
             ecg_small_train, ecg_small_test, ecg_small_val
@@ -58,7 +61,7 @@ def get_data_loader(config, split, drop_last_test=True, train_all=False):
         batch_size = config.batch_size
         freq = config.freq
 
-    if config.data == 'custom_list':
+    if 'custom_list' in config.data:
         config.data_path = data_paths(config.data_path)
     
     data_set = Data(
