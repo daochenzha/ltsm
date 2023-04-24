@@ -17,8 +17,8 @@ data_dict = {
     'tsf_data': Dataset_TSF,
     'ett_h': Dataset_ETT_hour,
     'ett_m': Dataset_ETT_minute,
-    'custom_list': Dataset_Custom_List,
-    'custom_list_time_stamp': Dataset_Custom_List_TS,
+    'custom_list': Dataset_Custom_List, # Note: if using list setting, please set {$DATASET_NAME}_{$DATASET_SPLIT} as config.data_path
+    'custom_list_time_stamp': Dataset_Custom_List_TS, # Note: if using time stamp setting, please set {$DATASET_NAME}_all as config.data_path
 }
 
 def data_paths(dataset):
