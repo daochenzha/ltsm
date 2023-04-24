@@ -8,6 +8,8 @@ from ltsm.data_provider.data_loader import (
     Dataset_Custom_List_TS
 )
 
+import os
+import numpy as np
 from torch.utils.data import DataLoader
 
 data_dict = {
@@ -30,7 +32,46 @@ def data_paths(dataset):
     return:
         data paths: list of strings
     '''
-    pass
+    paths = []
+    if 'eeg' in dataset:
+        for root, ds, fs in os.walk('/home/jy101/ltsm/dataset/eeg_csv/'):
+            for f in fs:
+                fullname = os.path.join(root, f)
+                if fullname.endswith('.csv'):
+                    paths.append(fullname)
+    elif 'ecg' in dataset:
+        for root, ds, fs in os.walk('/home/jy101/ltsm/dataset/fecgsyndb_csv/'):
+            for f in fs:
+                fullname = os.path.join(root, f)
+                if fullname.endswith('.csv'):
+                    paths.append(fullname)
+    elif 'ecg_small' in dataset:
+        for root, ds, fs in os.walk('/home/jy101/ltsm/dataset/ecg_arrhythmia_csv/'):
+            for f in fs:
+                fullname = os.path.join(root, f)
+                if fullname.endswith('.csv'):
+                    paths.append(fullname)
+    else:
+        pass
+    
+    length = len(paths)
+    # random shuffle
+    np.random.seed(0)
+    np.random.shuffle(paths)
+
+    split = dataset.split('_')[-1]
+    assert split in ['all', 'train', 'test', 'val']
+    type_map = {'all': 0, 'train': 1, 'val': 2, 'test': 3}
+    set_type = type_map[split]
+    
+    num_train = int(len(length) * 0.7)
+    num_test = int(len(length) * 0.2)
+    num_vali = len(length) - num_train - num_test
+    border1s = [0, 0, num_train, num_train + num_vali]
+    border2s = [length, num_train, num_train + num_vali, len(length)]
+
+    paths = paths[border1s[set_type]:border2s[set_type]]
+    return paths
     
 
 def get_data_loader(config, split, drop_last_test=True, train_all=False):
