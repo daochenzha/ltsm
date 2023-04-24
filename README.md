@@ -1,4 +1,4 @@
-# Large Time Series Model (LSTM)
+# Large Time Series Model (LTSM)
 
 ## Installation
 ```
