@@ -26,8 +26,8 @@ def data_paths(dataset):
     args:
         dataset: string
             eeg_all, ecg_all, ecg_small_all,
-            eeg_train, eeg_test, eeg_val, 
-            ecg_train, ecg_test, ecg_val, 
+            eeg_train, eeg_test, eeg_val,
+            ecg_train, ecg_test, ecg_val,
             ecg_small_train, ecg_small_test, ecg_small_val
     return:
         data paths: list of strings
@@ -53,7 +53,7 @@ def data_paths(dataset):
                     paths.append(fullname)
     else:
         pass
-    
+
     length = len(paths)
     # random shuffle
     np.random.seed(0)
@@ -63,16 +63,16 @@ def data_paths(dataset):
     assert split in ['all', 'train', 'test', 'val']
     type_map = {'all': 0, 'train': 1, 'val': 2, 'test': 3}
     set_type = type_map[split]
-    
-    num_train = int(len(length) * 0.7)
-    num_test = int(len(length) * 0.2)
-    num_vali = len(length) - num_train - num_test
+
+    num_train = int(length * 0.7)
+    num_test = int(length * 0.2)
+    num_vali = length - num_train - num_test
     border1s = [0, 0, num_train, num_train + num_vali]
-    border2s = [length, num_train, num_train + num_vali, len(length)]
+    border2s = [length, num_train, num_train + num_vali, length]
 
     paths = paths[border1s[set_type]:border2s[set_type]]
     return paths
-    
+
 
 def get_data_loader(config, split, drop_last_test=True, train_all=False):
     Data = data_dict[config.data]
@@ -104,7 +104,7 @@ def get_data_loader(config, split, drop_last_test=True, train_all=False):
 
     if 'custom_list' in config.data:
         config.data_path = data_paths(config.data_path)
-    
+
     data_set = Data(
         data_path=config.data_path,
         split=split,
