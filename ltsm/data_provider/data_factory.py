@@ -103,10 +103,10 @@ def get_data_loader(config, split, drop_last_test=True, train_all=False):
         freq = config.freq
 
     if 'custom_list' in config.data:
-        config.data_path = data_paths(config.data_path)
+        data_path = data_paths(config.data_path)
 
     data_set = Data(
-        data_path=config.data_path,
+        data_path=data_path,
         split=split,
         size=[config.seq_len, config.pred_len],
         features=config.features,
