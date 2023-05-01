@@ -1,3 +1,4 @@
+accelerate==0.18.0
 charset-normalizer==3.1.0
 cmake==3.26.3
 contourpy==1.0.7
