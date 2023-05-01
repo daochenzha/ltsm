@@ -609,7 +609,8 @@ class Dataset_Custom_List(Dataset):
     def __getitem__(self, index):
         i = 0
         for i in range(len(self.len_index)):
-            if index >= self.len_index[i]:
+            if index < self.len_index[i]:
+                i -= 1
                 break
         s_begin = index - self.len_index[i]
         s_end = s_begin + self.seq_len
@@ -619,7 +620,7 @@ class Dataset_Custom_List(Dataset):
         seq_x = self.data_all[i][s_begin:s_end]
         seq_y = self.data_all[i][r_begin:r_end]
 
-        return seq_x, seq_y, None, None
+        return seq_x, seq_y, np.empty(shape=(self.seq_len, 0)), np.empty(shape=(self.pred_len, 0))
 
     def __len__(self):
         return self.tot_len
@@ -700,7 +701,8 @@ class Dataset_Custom_List_TS(Dataset):
     def __getitem__(self, index):
         i = 0
         for i in range(len(self.len_index)):
-            if index >= self.len_index[i]:
+            if index < self.len_index[i]:
+                i -= 1
                 break
         s_begin = index - self.len_index[i]
         s_end = s_begin + self.seq_len
@@ -710,7 +712,7 @@ class Dataset_Custom_List_TS(Dataset):
         seq_x = self.data_all[i][s_begin:s_end]
         seq_y = self.data_all[i][r_begin:r_end]
 
-        return seq_x, seq_y, None, None
+        return seq_x, seq_y, np.empty(shape=(self.seq_len, 0)), np.empty(shape=(self.pred_len, 0))
 
     def __len__(self):
         return self.tot_len

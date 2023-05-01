@@ -34,7 +34,7 @@ def data_paths(dataset):
     '''
     paths = []
     if 'eeg' in dataset:
-        for root, ds, fs in os.walk('/home/jy101/ltsm/dataset/eeg_csv/'):
+        for root, ds, fs in os.walk('/home/yc146/ltsm/dataset/eeg_csv_test'):
             for f in fs:
                 fullname = os.path.join(root, f)
                 if fullname.endswith('.csv'):
@@ -104,6 +104,8 @@ def get_data_loader(config, split, drop_last_test=True, train_all=False):
 
     if 'custom_list' in config.data:
         data_path = data_paths(config.data_path)
+    else:
+        data_path = config.data_path
 
     data_set = Data(
         data_path=data_path,
