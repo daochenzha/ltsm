@@ -14,16 +14,17 @@ def test(model, test_loader, config, device):
         for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(enumerate(test_loader)):
             batch_x = batch_x.float().to(device)
             batch_y = batch_y.float()
-            
+
             outputs = model(batch_x[:, -config.seq_len:, :])
             pred = outputs.detach().cpu().numpy()
             true = batch_y.detach().cpu().numpy()
-            
+
             preds.append(pred)
             trues.append(true)
 
-    preds = np.array(preds).flatten(0, 1)
-    trues = np.array(trues).flatten(0, 1)
+
+    preds = np.array(preds).reshape(-1)
+    trues = np.array(trues).reshape(-1)
     # mases = np.mean(np.array(mases))
     print('test shape:', preds.shape, trues.shape)
 

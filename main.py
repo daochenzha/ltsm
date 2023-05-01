@@ -8,6 +8,7 @@ from ltsm.data_provider.data_factory import get_data_loader
 from ltsm.training import train
 from ltsm.testing import test
 
+from transformers import TrainingArguments
 
 
 def get_args():
@@ -33,7 +34,7 @@ def get_args():
     parser.add_argument('--learning_rate', type=float, default=0.0001)
     parser.add_argument('--batch_size', type=int, default=512)
     parser.add_argument('--num_workers', type=int, default=10)
-    parser.add_argument('--train_epochs', type=int, default=10)
+    parser.add_argument('--train_epochs', type=int, default=1)
     parser.add_argument('--lradj', type=str, default='type1')
     parser.add_argument('--patience', type=int, default=3)
 
@@ -74,6 +75,7 @@ def seed_all(fixed_seed):
 def run(config):
     mses = []
     maes = []
+    training_args = TrainingArguments("test-trainer")
 
     for ii in range(config.itr):
 
@@ -83,7 +85,7 @@ def run(config):
             config.d_model,
             config.n_heads,
             config.e_layers,
-            config.gpt_layers, 
+            config.gpt_layers,
             config.d_ff,
             config.embed,
             ii,
@@ -101,21 +103,23 @@ def run(config):
         device = torch.device(config.device)
 
         # Train
-        model = train(train_loader, vali_loader, save_dir, config, device)
+        model = train(train_loader, vali_loader, save_dir, config, training_args, device)
         print("Training done!")
 
         # Test
-        best_model_path = os.path.join(save_dir, 'checkpoint.pth')
-        model.load_state_dict(torch.load(best_model_path))
-        print("------------------------------------")
-        mse, mae = test(model, test_loader, config, device)
-        mses.append(mse)
-        maes.append(mae)
+        if training_args.local_rank == 0:
+            best_model_path = os.path.join(save_dir, 'checkpoint.pth')
+            model.load_state_dict(torch.load(best_model_path))
+            print("------------------------------------")
+            mse, mae = test(model, test_loader, config, device)
+            mses.append(mse)
+            maes.append(mae)
 
-    mses = np.array(mses)
-    maes = np.array(maes)
-    print("mse_mean = {:.4f}, mse_std = {:.4f}".format(np.mean(mses), np.std(mses)))
-    print("mae_mean = {:.4f}, mae_std = {:.4f}".format(np.mean(maes), np.std(maes)))
+    if training_args.local_rank == 0:
+        mses = np.array(mses)
+        maes = np.array(maes)
+        print("mse_mean = {:.4f}, mse_std = {:.4f}".format(np.mean(mses), np.std(mses)))
+        print("mae_mean = {:.4f}, mae_std = {:.4f}".format(np.mean(maes), np.std(maes)))
 
 
 if __name__ == "__main__":

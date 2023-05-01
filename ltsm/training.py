@@ -3,15 +3,20 @@ import time
 import numpy as np
 import torch
 import torch.nn as nn
- 
+
+from accelerate import Accelerator
 
 def train(
     train_loader,
     vali_loader,
     save_dir,
     config,
+    training_args,
     device,
 ):
+    accelerator = Accelerator()
+    device = accelerator.device
+
     if config.model == 'PatchTST':
         from ltsm.models.PatchTST import PatchTST
         model = PatchTST(config, device)
@@ -26,27 +31,33 @@ def train(
 
     time_now = time.time()
     train_steps = len(train_loader)
+
     model_optim = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     early_stopping = EarlyStopping(patience=config.patience, verbose=True)
     criterion = nn.MSELoss()
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model_optim, T_max=config.tmax, eta_min=1e-8)
+
+    model, model_optim, train_loader = accelerator.prepare(model, model_optim, train_loader)
+
 
     for epoch in range(config.train_epochs):
 
         iter_count = 0
         train_loss = []
         epoch_time = time.time()
+
+
         for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(enumerate(train_loader)):
             iter_count += 1
             model_optim.zero_grad()
             batch_x = batch_x.float().to(device)
 
             batch_y = batch_y.float().to(device)
-            
+
             # The following two are not used, but could be useful
             batch_x_mark = batch_x_mark.float().to(device)
             batch_y_mark = batch_y_mark.float().to(device)
-            
+
             outputs = model(batch_x)
 
             loss = criterion(outputs, batch_y)
@@ -59,10 +70,9 @@ def train(
                 print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
                 iter_count = 0
                 time_now = time.time()
-            loss.backward()
+            accelerator.backward(loss)
             model_optim.step()
 
-        
         print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
 
         train_loss = np.average(train_loss)
@@ -81,7 +91,8 @@ def train(
             print("lr = {:.10f}".format(model_optim.param_groups[0]['lr']))
         else:
             adjust_learning_rate(model_optim, epoch + 1, config)
-        early_stopping(vali_loss, model, save_dir)
+
+        early_stopping(vali_loss, model, save_dir, training_args.local_rank)
         if early_stopping.early_stop:
             print("Early stopping")
             break
@@ -111,7 +122,7 @@ def vali(
             batch_y_mark = batch_y_mark.float().to(device)
 
             outputs = model(batch_x)
-            
+
             pred = outputs.detach().cpu()
             true = batch_y.detach().cpu()
 
@@ -155,11 +166,13 @@ class EarlyStopping:
         self.val_loss_min = np.Inf
         self.delta = delta
 
-    def __call__(self, val_loss, model, path):
+    def __call__(self, val_loss, model, path, local_rank=0):
         score = -val_loss
         if self.best_score is None:
             self.best_score = score
-            self.save_checkpoint(val_loss, model, path)
+            if local_rank == 0:
+                self.save_checkpoint(val_loss, model, path)
+
         elif score < self.best_score + self.delta:
             self.counter += 1
             print(f'EarlyStopping counter: {self.counter} out of {self.patience}')
@@ -167,7 +180,10 @@ class EarlyStopping:
                 self.early_stop = True
         else:
             self.best_score = score
-            self.save_checkpoint(val_loss, model, path)
+
+            if local_rank == 0:
+                self.save_checkpoint(val_loss, model, path)
+
             self.counter = 0
 
     def save_checkpoint(self, val_loss, model, path):
