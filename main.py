@@ -8,7 +8,6 @@ from ltsm.data_provider.data_factory import get_data_loader
 from ltsm.training import train
 from ltsm.testing import test
 
-from transformers import TrainingArguments
 
 
 def get_args():
@@ -34,7 +33,7 @@ def get_args():
     parser.add_argument('--learning_rate', type=float, default=0.0001)
     parser.add_argument('--batch_size', type=int, default=512)
     parser.add_argument('--num_workers', type=int, default=10)
-    parser.add_argument('--train_epochs', type=int, default=1)
+    parser.add_argument('--train_epochs', type=int, default=10)
     parser.add_argument('--lradj', type=str, default='type1')
     parser.add_argument('--patience', type=int, default=3)
 
@@ -100,10 +99,9 @@ def run(config):
         print("Data loaded!")
 
         device = torch.device(config.device)
-        training_args = TrainingArguments("test-trainer")
 
         # Train
-        model = train(train_loader, vali_loader, save_dir, config, training_args, device)
+        model = train(train_loader, vali_loader, save_dir, config, device)
         print("Training done!")
 
         # Test
