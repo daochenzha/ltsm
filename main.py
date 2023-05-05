@@ -37,6 +37,7 @@ def get_args():
     parser.add_argument('--train_epochs', type=int, default=1)
     parser.add_argument('--lradj', type=str, default='type1')
     parser.add_argument('--patience', type=int, default=3)
+    parser.add_argument('--gradient_accumulation_steps', type=int, default=1)
 
     parser.add_argument('--gpt_layers', type=int, default=3)
     parser.add_argument('--is_gpt', type=int, default=1)
