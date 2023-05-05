@@ -14,7 +14,7 @@ def train(
     training_args,
     device,
 ):
-    accelerator = Accelerator() # gradient_accumulation_steps=config.gradient_accumulation_steps)
+    accelerator = Accelerator(gradient_accumulation_steps=config.gradient_accumulation_steps)
     device = accelerator.device
 
     if config.model == 'PatchTST':
