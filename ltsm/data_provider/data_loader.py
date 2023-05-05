@@ -598,7 +598,10 @@ class Dataset_Custom_List(Dataset):
         self.len_index = [0]
         self.tot_len = 0
         for path in self.data_path:
-            df_raw = pd.read_csv(path)
+            if path.endswith('.csv'):
+                df_raw = pd.read_csv(path)
+            elif path.endswith('.feather'):
+                df_raw = pd.read_feather(path)
             df_raw = df_raw.dropna()
             df_raw = df_raw.values
             if self.scale:
@@ -673,7 +676,10 @@ class Dataset_Custom_List_TS(Dataset):
         self.len_index = [0]
         self.tot_len = 0
         for path in self.data_path:
-            df_raw = pd.read_csv(path)
+            if path.endswith('.csv'):
+                df_raw = pd.read_csv(path)
+            elif path.endswith('.feather'):
+                df_raw = pd.read_feather(path)
             # df_raw = df_raw.dropna()
             # df_raw = df_raw.values
 

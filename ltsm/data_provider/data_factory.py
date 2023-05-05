@@ -34,22 +34,22 @@ def data_paths(dataset):
     '''
     paths = []
     if 'eeg' in dataset:
-        for root, ds, fs in os.walk('/home/yc146/ltsm/dataset/eeg_csv_test'):
+        for root, ds, fs in os.walk('/home/jy101/ltsm/dataset/eeg_csv_feather/'):
             for f in fs:
                 fullname = os.path.join(root, f)
-                if fullname.endswith('.csv'):
+                if fullname.endswith('.csv') or fullname.endswith('.feather'):
                     paths.append(fullname)
     elif 'ecg' in dataset:
         for root, ds, fs in os.walk('/home/jy101/ltsm/dataset/fecgsyndb_csv/'):
             for f in fs:
                 fullname = os.path.join(root, f)
-                if fullname.endswith('.csv'):
+                if fullname.endswith('.csv') or fullname.endswith('.feather'):
                     paths.append(fullname)
     elif 'ecg_small' in dataset:
         for root, ds, fs in os.walk('/home/jy101/ltsm/dataset/ecg_arrhythmia_csv/'):
             for f in fs:
                 fullname = os.path.join(root, f)
-                if fullname.endswith('.csv'):
+                if fullname.endswith('.csv') or fullname.endswith('.feather'):
                     paths.append(fullname)
     else:
         pass
