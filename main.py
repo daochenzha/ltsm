@@ -112,7 +112,7 @@ def run(config):
             best_model_path = os.path.join(save_dir, 'checkpoint.pth')
             model.load_state_dict(torch.load(best_model_path))
             print("------------------------------------")
-            mse, mae = test(model, test_loader, config, device)
+            mse, mae = test(model, test_loader, config, device, ii)
             mses.append(mse)
             maes.append(mae)
 

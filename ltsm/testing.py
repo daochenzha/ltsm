@@ -4,7 +4,7 @@ import torch
 
 from ltsm.utils.metrics import metric
 
-def test(model, test_loader, config, device):
+def test(model, test_loader, config, device, iters):
     preds = []
     trues = []
     # mases = []
@@ -15,7 +15,7 @@ def test(model, test_loader, config, device):
             batch_x = batch_x.float().to(device)
             batch_y = batch_y.float()
 
-            outputs = model(batch_x[:, -config.seq_len:, :])
+            outputs = model(batch_x[:, -config.seq_len:, :], iters)
             pred = outputs.detach().cpu().numpy()
             true = batch_y.detach().cpu().numpy()
 

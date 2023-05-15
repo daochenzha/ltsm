@@ -14,7 +14,7 @@ def train(
     config,
     training_args,
     device,
-    iter
+    iters
 ):
     accelerator = Accelerator(gradient_accumulation_steps=config.gradient_accumulation_steps)
     device = accelerator.device
@@ -60,7 +60,7 @@ def train(
             # batch_x_mark = batch_x_mark.float().to(device)
             # batch_y_mark = batch_y_mark.float().to(device)
 
-            outputs = model(batch_x)
+            outputs = model(batch_x, iters)
             loss = criterion(outputs, batch_y)
 
             if (i + 1) % 1000 == 0:
@@ -80,7 +80,6 @@ def train(
             with torch.no_grad():
                 all_loss = criterion(all_outputs, all_batch_y)
             train_loss.append(all_loss.item())
-            # break
 
         print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
 
@@ -92,7 +91,7 @@ def train(
             criterion,
             config,
             device,
-            iter
+            iters
         )
         print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f}".format(
             epoch + 1, train_steps, train_loss, vali_loss))
@@ -116,7 +115,7 @@ def vali(
     criterion,
     config,
     device,
-    iter
+    iters
 ):
 
     total_loss = []
@@ -133,7 +132,7 @@ def vali(
             # batch_x_mark = batch_x_mark.float().to(device)
             # batch_y_mark = batch_y_mark.float().to(device)
 
-            outputs = model(batch_x)
+            outputs = model(batch_x, iters)
 
             all_outputs, all_batch_y = accelerator.gather_for_metrics((outputs.contiguous(), batch_y))
             with torch.no_grad():
@@ -168,7 +167,7 @@ def adjust_learning_rate(optimizer, epoch,config):
             param_group['lr'] = lr
         print('Updating learning rate to {}'.format(lr))
 
-def vali_metric(accelerator, model, test_loader, config, device, iter):
+def vali_metric(accelerator, model, test_loader, config, device, iters):
     preds = []
     trues = []
     # mases = []
@@ -179,7 +178,7 @@ def vali_metric(accelerator, model, test_loader, config, device, iter):
             batch_x = batch_x.float() # .to(device)
             batch_y = batch_y.float()
 
-            outputs = model(batch_x[:, -config.seq_len:, :]) #, iter)
+            outputs = model(batch_x[:, -config.seq_len:, :], iters)
             # pred = outputs.detach().cpu().numpy()
             # true = batch_y.detach().cpu().numpy()
 

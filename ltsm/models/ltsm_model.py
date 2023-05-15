@@ -10,7 +10,7 @@ from einops import rearrange
 from ltsm.models.embed import DataEmbedding, DataEmbedding_wo_time
 
 class LTSM(nn.Module):
-    
+
     def __init__(self, configs, device):
         super().__init__()
         self.is_gpt = configs.is_gpt
@@ -19,9 +19,9 @@ class LTSM(nn.Module):
         self.stride = configs.stride
         self.patch_num = (configs.seq_len - self.patch_size) // self.stride + 1
 
-        self.padding_patch_layer = nn.ReplicationPad1d((0, self.stride)) 
+        self.padding_patch_layer = nn.ReplicationPad1d((0, self.stride))
         self.patch_num += 1
-        
+
         if configs.is_gpt:
             if configs.pretrain:
                 self.gpt2 = GPT2Model.from_pretrained('gpt2', output_attentions=True, output_hidden_states=True)  # loads a pretrained GPT-2 base model
@@ -30,10 +30,10 @@ class LTSM(nn.Module):
                 self.gpt2 = GPT2Model(GPT2Config())
             self.gpt2.h = self.gpt2.h[:configs.gpt_layers]
             print("gpt2 = {}".format(self.gpt2))
-        
+
         self.in_layer = nn.Linear(configs.patch_size, configs.d_model)
         self.out_layer = nn.Linear(configs.d_model * self.patch_num, configs.pred_len)
-        
+
         if configs.freeze and configs.pretrain:
             for i, (name, param) in enumerate(self.gpt2.named_parameters()):
                 if 'ln' in name or 'wpe' in name:
@@ -44,16 +44,16 @@ class LTSM(nn.Module):
         for layer in (self.gpt2, self.in_layer, self.out_layer):
             layer.to(device=device)
             layer.train()
-        
+
         self.cnt = 0
 
 
-    def forward(self, x):
+    def forward(self, x, iters):
         B, L, M = x.shape
 
         means = x.mean(1, keepdim=True).detach()
         x = x - means
-        stdev = torch.sqrt(torch.var(x, dim=1, keepdim=True, unbiased=False)+ 1e-5).detach() 
+        stdev = torch.sqrt(torch.var(x, dim=1, keepdim=True, unbiased=False)+ 1e-5).detach()
         x /= stdev
 
         x = rearrange(x, 'b l m -> b m l')
