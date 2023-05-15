@@ -40,7 +40,7 @@ def train(
     criterion = nn.MSELoss()
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model_optim, T_max=config.tmax, eta_min=1e-8)
 
-    model, model_optim, train_loader = accelerator.prepare(model, model_optim, train_loader)
+    model, model_optim, train_loader, vali_loader = accelerator.prepare(model, model_optim, train_loader, vali_loader)
 
 
     for epoch in range(config.train_epochs):
@@ -53,18 +53,15 @@ def train(
         for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(enumerate(train_loader)):
             iter_count += 1
             model_optim.zero_grad()
-            batch_x = batch_x.float().to(device)
-
-            batch_y = batch_y.float().to(device)
+            batch_x = batch_x.float() # .to(device)
+            batch_y = batch_y.float() # .to(device)
 
             # The following two are not used, but could be useful
-            batch_x_mark = batch_x_mark.float().to(device)
-            batch_y_mark = batch_y_mark.float().to(device)
+            # batch_x_mark = batch_x_mark.float().to(device)
+            # batch_y_mark = batch_y_mark.float().to(device)
 
-            outputs = model(batch_x, iter)
-
+            outputs = model(batch_x)
             loss = criterion(outputs, batch_y)
-            train_loss.append(loss.item())
 
             if (i + 1) % 1000 == 0:
                 print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
@@ -74,15 +71,22 @@ def train(
                 iter_count = 0
                 time_now = time.time()
                 save_iters(train_loss, model, save_dir, i + 1, training_args.local_rank)
-                mse, mae = vali_metric(model, vali_loader, config, device, iter)
+                mse, mae = vali_metric(accelerator, model, vali_loader, criterion, config, device, 0)
 
             accelerator.backward(loss)
             model_optim.step()
+
+            all_outputs, all_batch_y = accelerator.gather_for_metrics((outputs.contiguous(), batch_y))
+            with torch.no_grad():
+                all_loss = criterion(all_outputs, all_batch_y)
+            train_loss.append(all_loss.item())
+            # break
 
         print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
 
         train_loss = np.average(train_loss)
         vali_loss = vali(
+            accelerator,
             model,
             vali_loader,
             criterion,
@@ -106,6 +110,7 @@ def train(
     return model
 
 def vali(
+    accelerator,
     model,
     vali_loader,
     criterion,
@@ -123,20 +128,19 @@ def vali(
 
     with torch.no_grad():
         for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(enumerate(vali_loader)):
-            batch_x = batch_x.float().to(device)
+            batch_x = batch_x.float() # .to(device)
             batch_y = batch_y.float()
+            # batch_x_mark = batch_x_mark.float().to(device)
+            # batch_y_mark = batch_y_mark.float().to(device)
 
-            batch_x_mark = batch_x_mark.float().to(device)
-            batch_y_mark = batch_y_mark.float().to(device)
+            outputs = model(batch_x)
 
-            outputs = model(batch_x, iter)
+            all_outputs, all_batch_y = accelerator.gather_for_metrics((outputs.contiguous(), batch_y))
+            with torch.no_grad():
+                all_loss = criterion(all_outputs.contiguous(), all_batch_y)
+            total_loss.append(all_loss.item())
 
-            pred = outputs.detach().cpu()
-            true = batch_y.detach().cpu()
-
-            loss = criterion(pred, true)
-
-            total_loss.append(loss)
+            # break
 
     total_loss = np.average(total_loss)
     if model == "LTSM":
@@ -164,7 +168,7 @@ def adjust_learning_rate(optimizer, epoch,config):
             param_group['lr'] = lr
         print('Updating learning rate to {}'.format(lr))
 
-def vali_metric(model, test_loader, config, device, iter):
+def vali_metric(accelerator, model, test_loader, config, device, iter):
     preds = []
     trues = []
     # mases = []
@@ -172,16 +176,17 @@ def vali_metric(model, test_loader, config, device, iter):
     model.eval()
     with torch.no_grad():
         for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(enumerate(test_loader)):
-            batch_x = batch_x.float().to(device)
+            batch_x = batch_x.float() # .to(device)
             batch_y = batch_y.float()
 
-            outputs = model(batch_x[:, -config.seq_len:, :], iter)
-            pred = outputs.detach().cpu().numpy()
-            true = batch_y.detach().cpu().numpy()
+            outputs = model(batch_x[:, -config.seq_len:, :]) #, iter)
+            # pred = outputs.detach().cpu().numpy()
+            # true = batch_y.detach().cpu().numpy()
 
-            preds.append(pred)
-            trues.append(true)
+            all_outputs, all_batch_y = accelerator.gather_for_metrics((outputs.contiguous(), batch_y))
 
+            preds.append(all_outputs.cpu().numpy())
+            trues.append(all_batch_y.cpu().numpy())
 
     preds = np.array(preds).reshape(-1)
     trues = np.array(trues).reshape(-1)
