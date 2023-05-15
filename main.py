@@ -59,7 +59,7 @@ def get_args():
     parser.add_argument('--hid_dim', type=int, default=16)
     parser.add_argument('--tmax', type=int, default=10)
 
-    parser.add_argument('--itr', type=int, default=3)
+    parser.add_argument('--itr', type=int, default=1)
     parser.add_argument('--cos', type=int, default=0)
 
     args = parser.parse_args()
@@ -104,7 +104,7 @@ def run(config):
         device = torch.device(config.device)
 
         # Train
-        model = train(train_loader, vali_loader, save_dir, config, training_args, device)
+        model = train(train_loader, vali_loader, save_dir, config, training_args, device, ii)
         print("Training done!")
 
         # Test
@@ -112,7 +112,7 @@ def run(config):
             best_model_path = os.path.join(save_dir, 'checkpoint.pth')
             model.load_state_dict(torch.load(best_model_path))
             print("------------------------------------")
-            mse, mae = test(model, test_loader, config, device)
+            mse, mae = test(model, test_loader, config, device, ii)
             mses.append(mse)
             maes.append(mae)
 

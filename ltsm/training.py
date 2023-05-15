@@ -3,6 +3,7 @@ import time
 import numpy as np
 import torch
 import torch.nn as nn
+from ltsm.utils.metrics import metric
 
 from accelerate import Accelerator
 
@@ -13,6 +14,7 @@ def train(
     config,
     training_args,
     device,
+    iter
 ):
     accelerator = Accelerator(gradient_accumulation_steps=config.gradient_accumulation_steps)
     device = accelerator.device
@@ -33,6 +35,7 @@ def train(
     train_steps = len(train_loader)
 
     model_optim = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+    save_iters = save_iters_class(verbose=True)
     early_stopping = EarlyStopping(patience=config.patience, verbose=True)
     criterion = nn.MSELoss()
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model_optim, T_max=config.tmax, eta_min=1e-8)
@@ -58,7 +61,7 @@ def train(
             batch_x_mark = batch_x_mark.float().to(device)
             batch_y_mark = batch_y_mark.float().to(device)
 
-            outputs = model(batch_x)
+            outputs = model(batch_x, iter)
 
             loss = criterion(outputs, batch_y)
             train_loss.append(loss.item())
@@ -70,6 +73,9 @@ def train(
                 print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
                 iter_count = 0
                 time_now = time.time()
+                save_iters(train_loss, model, save_dir, i + 1, training_args.local_rank)
+                mse, mae = vali_metric(model, vali_loader, config, device, iter)
+
             accelerator.backward(loss)
             model_optim.step()
 
@@ -82,6 +88,7 @@ def train(
             criterion,
             config,
             device,
+            iter
         )
         print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f}".format(
             epoch + 1, train_steps, train_loss, vali_loss))
@@ -104,6 +111,7 @@ def vali(
     criterion,
     config,
     device,
+    iter
 ):
 
     total_loss = []
@@ -121,7 +129,7 @@ def vali(
             batch_x_mark = batch_x_mark.float().to(device)
             batch_y_mark = batch_y_mark.float().to(device)
 
-            outputs = model(batch_x)
+            outputs = model(batch_x, iter)
 
             pred = outputs.detach().cpu()
             true = batch_y.detach().cpu()
@@ -129,6 +137,7 @@ def vali(
             loss = criterion(pred, true)
 
             total_loss.append(loss)
+
     total_loss = np.average(total_loss)
     if model == "LTSM":
         model.in_layer.train()
@@ -154,6 +163,51 @@ def adjust_learning_rate(optimizer, epoch,config):
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
         print('Updating learning rate to {}'.format(lr))
+
+def vali_metric(model, test_loader, config, device, iter):
+    preds = []
+    trues = []
+    # mases = []
+
+    model.eval()
+    with torch.no_grad():
+        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(enumerate(test_loader)):
+            batch_x = batch_x.float().to(device)
+            batch_y = batch_y.float()
+
+            outputs = model(batch_x[:, -config.seq_len:, :], iter)
+            pred = outputs.detach().cpu().numpy()
+            true = batch_y.detach().cpu().numpy()
+
+            preds.append(pred)
+            trues.append(true)
+
+
+    preds = np.array(preds).reshape(-1)
+    trues = np.array(trues).reshape(-1)
+    # mases = np.mean(np.array(mases))
+    print('test shape:', preds.shape, trues.shape)
+
+    mae, mse, rmse, mape, mspe, smape, nd = metric(preds, trues)
+    # print('mae:{:.4f}, mse:{:.4f}, rmse:{:.4f}, smape:{:.4f}, mases:{:.4f}'.format(mae, mse, rmse, smape, mases))
+    print('mae:{:.4f}, mse:{:.4f}, rmse:{:.4f}, smape:{:.4f}'.format(mae, mse, rmse, smape))
+
+    return mse, mae
+
+class save_iters_class:
+    def __init__(self, verbose=False):
+        self.verbose = verbose
+        self.iter = 0
+
+    def __call__(self, val_loss, model, path, iters, local_rank=0):
+        if iters % 500 == 0 and local_rank == 0:
+            self.iter = iters
+            print("Saving iteration model of {}".format(iters))
+            self.save_checkpoint(val_loss, model, path)
+
+    def save_checkpoint(self, val_loss, model, path):
+        if self.verbose:
+            torch.save(model.state_dict(), path + '/' + 'checkpoint_'+ str(self.iter) + '.pth')
 
 
 class EarlyStopping:
