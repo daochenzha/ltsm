@@ -71,7 +71,7 @@ def train(
                 iter_count = 0
                 time_now = time.time()
                 save_iters(train_loss, model, save_dir, i + 1, training_args.local_rank)
-                mse, mae = vali_metric(accelerator, model, vali_loader, criterion, config, device, 0)
+                mse, mae = vali_metric(accelerator, model, vali_loader, config, device, 0)
 
             accelerator.backward(loss)
             model_optim.step()
@@ -91,7 +91,7 @@ def train(
             criterion,
             config,
             device,
-            iters
+            0
         )
         print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f}".format(
             epoch + 1, train_steps, train_loss, vali_loss))
@@ -139,7 +139,6 @@ def vali(
                 all_loss = criterion(all_outputs.contiguous(), all_batch_y)
             total_loss.append(all_loss.item())
 
-            # break
 
     total_loss = np.average(total_loss)
     if model == "LTSM":
