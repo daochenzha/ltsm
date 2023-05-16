@@ -15,21 +15,22 @@ Let's maintain a table of the datasets. We just put datasets in our server for n
 
 [EEG (3.4GB)](https://www.physionet.org/content/eegmmidb/1.0.0/)
 
-```
-/home/jy101/ltsm/dataset/eeg_csv/
-```
+1526 in total, length 9633
+
+`/home/jy101/ltsm/dataset/eeg_csv/` or `/home/jy101/ltsm/dataset/eeg_feather/`
+
 
 Pretrain: [ECG (33GB)](https://physionet.org/content/fecgsyndb/1.0.0/)
 
-```
-/home/jy101/ltsm/dataset/fecgsyndb_csv/
-```
+7000 in total, length 75000
+
+`/home/jy101/ltsm/dataset/fecgsyndb_csv/` or `/home/jy101/ltsm/dataset/fecgsyndb_feather/`
 
 Fine-tune and Testing: [ECG (5GB)](https://physionet.org/content/ecg-arrhythmia/1.0.0/)
 
-```
-/home/jy101/ltsm/dataset/ecg_arrhythmia_csv/
-```
+45152 in total, length 5000
+
+`/home/jy101/ltsm/dataset/ecg_arrhythmia_csv/` or `/home/jy101/ltsm/dataset/ecg_arrhythmia_feather/`
 
 ## Quick start
 Get some example data (in datalab1 at Rice):
