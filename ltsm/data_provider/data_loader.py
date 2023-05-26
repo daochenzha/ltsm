@@ -7,6 +7,8 @@ from sklearn.preprocessing import StandardScaler
 import warnings
 from pathlib import Path
 
+from torch.utils.data.dataset import ConcatDataset, Dataset
+
 from ltsm.utils.timefeatures import time_features
 from ltsm.utils.tools import convert_tsf_to_dataframe
 
@@ -703,6 +705,11 @@ class Dataset_Custom_List_TS(Dataset):
 
             self.data_all.append(data[border1:border2])
             self.len_index.append(self.len_index[-1] + border2 - border1 - self.seq_len - self.pred_len + 1)
+
+    def add_data(self, df):
+        self.data_all.append(df)
+        self.len_index.append(self.len_index[-1] + len(df) - self.seq_len - self.pred_len + 1)
+        self.tot_len = self.len_index[-1]
 
     def __getitem__(self, index):
         i = 0

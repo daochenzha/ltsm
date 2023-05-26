@@ -10,6 +10,18 @@ pip3 install -e .
 pip3 install -r requirements.txt
 ```
 
+## Quick start
+Get some example data (in datalab1 at Rice):
+
+```
+cp -r /home/dz36/ltsm/ltsm/dataset ./
+```
+
+Train model on Weather dataset:
+```
+python main.py --model_id test_run
+```
+
 ## Datasets
 Let's maintain a table of the datasets. We just put datasets in our server for now without uploading to Github.
 
@@ -32,16 +44,15 @@ Fine-tune and Testing: [ECG (5GB)](https://physionet.org/content/ecg-arrhythmia/
 
 `/home/jy101/ltsm/dataset/ecg_arrhythmia_csv/` or `/home/jy101/ltsm/dataset/ecg_arrhythmia_feather/`
 
-## Quick start
-Get some example data (in datalab1 at Rice):
+Data configuration:
+```
+--data_path: path to the data folder
+--data: name of the data loader (i.e. Dataset_Custom_List, Dataset_Custom_List_TS)
+```
 
+Data loader:
 ```
-cp -r /home/dz36/ltsm/ltsm/dataset ./
-```
-
-Train model on Weather dataset:
-```
-python main.py --model_id test_run
+train_loader, val_loader, test_loader = get_data_loaders(config)
 ```
 
 ## Roadmap

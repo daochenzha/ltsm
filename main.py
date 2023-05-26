@@ -4,7 +4,7 @@ import os
 import argparse
 import random
 
-from ltsm.data_provider.data_factory import get_data_loader
+from ltsm.data_provider.data_factory import get_data_loader, get_data_loaders
 from ltsm.training import train
 from ltsm.testing import test
 
@@ -99,6 +99,8 @@ def run(config):
         train_loader = get_data_loader(config, 'train')
         vali_loader = get_data_loader(config, 'val')
         test_loader = get_data_loader(config, 'test')
+
+        # train_loader, vali_loader, test_loader = get_data_loaders(config)
         print("Data loaded!")
 
         device = torch.device(config.device)
