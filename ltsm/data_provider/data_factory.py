@@ -74,7 +74,7 @@ def get_data_loader(config, split, drop_last_test=True, train_all=False):
     return data_loader
 
 
-def data_paths(data_path, split='all'):
+def data_paths(data_path):
     '''
     args:
         data_path: string

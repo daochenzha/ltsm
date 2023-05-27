@@ -44,6 +44,11 @@ Fine-tune and Testing: [ECG (5GB)](https://physionet.org/content/ecg-arrhythmia/
 
 `/home/jy101/ltsm/dataset/ecg_arrhythmia_csv/` or `/home/jy101/ltsm/dataset/ecg_arrhythmia_feather/`
 
+Monash in
+```
+/home/jy101/ltsm/dataset/monash/
+```
+
 Data configuration:
 ```
 --data_path: path to the data folder
