@@ -707,6 +707,7 @@ class Dataset_Custom_List_TS(Dataset):
             self.len_index.append(self.len_index[-1] + border2 - border1 - self.seq_len - self.pred_len + 1)
 
     def add_data(self, df):
+        assert len(df) >= self.seq_len + self.pred_len
         self.data_all.append(df)
         self.len_index.append(self.len_index[-1] + len(df) - self.seq_len - self.pred_len + 1)
         self.tot_len = self.len_index[-1]

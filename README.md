@@ -44,10 +44,19 @@ Fine-tune and Testing: [ECG (5GB)](https://physionet.org/content/ecg-arrhythmia/
 
 `/home/jy101/ltsm/dataset/ecg_arrhythmia_csv/` or `/home/jy101/ltsm/dataset/ecg_arrhythmia_feather/`
 
-Monash in
+### Monash
+
+Dataset in 
 ```
-/home/jy101/ltsm/dataset/monash/
+/home/jy101/ltsm/dataset/monash_raw/
 ```
+
+usage:
+```
+--data tsf_data --data_path /home/jy101/ltsm/dataset/monash_raw/$DATASET.tsf
+```
+
+## Custum Dataset
 
 Data configuration:
 ```
