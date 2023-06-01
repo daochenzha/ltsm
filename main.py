@@ -29,6 +29,7 @@ def get_args():
 
     parser.add_argument('--seq_len', type=int, default=512)
     parser.add_argument('--pred_len', type=int, default=96)
+    parser.add_argument('--label_len', type=int, default=48)
 
     parser.add_argument('--decay_fac', type=float, default=0.75)
     parser.add_argument('--learning_rate', type=float, default=0.0001)
