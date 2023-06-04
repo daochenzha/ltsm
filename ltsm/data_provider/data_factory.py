@@ -54,7 +54,7 @@ def get_data_loader(config, split, drop_last_test=True, train_all=False):
     data_set = Data(
         data_path=config.data_path,
         split=split,
-        size=[config.seq_len, config.pred_len],
+        size=[config.seq_len, config.label_len, config.pred_len],
         features=config.features,
         target=config.target,
         timeenc=timeenc,
