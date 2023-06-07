@@ -476,84 +476,71 @@ class Dataset_TSF(Dataset):
             self.max_len = 1e8
 
         self.data_path = data_path
-        self.timeseries = self.__read_data__()
+
+        self.features = features
+        self.target = target
+        self.scale = scale
+        self.timeenc = timeenc
+        self.freq = freq
+        self.percent = percent
+        self.__read_data__()
+        
+        self.tot_len = self.len_index[-1]
 
 
     def __read_data__(self):
+        self.scaler = StandardScaler()
         df, frequency, forecast_horizon, contain_missing_values, contain_equal_length = convert_tsf_to_dataframe(self.data_path)
         self.freq = frequency
         def dropna(x):
             return x[~np.isnan(x)]
         timeseries = [dropna(ts).astype(np.float32) for ts in df.series_value]
         
+        self.data_all = []
+        self.len_index = [0]
         self.tot_len = 0
-        self.len_seq = []
-        self.seq_id = []
         for i in range(len(timeseries)):
-            res_len = max(self.pred_len + self.seq_len - timeseries[i].shape[0], 0)
-            pad_zeros = np.zeros(res_len)
-            timeseries[i] = np.hstack([pad_zeros, timeseries[i]])
+            df_raw = timeseries[i].reshape(-1, 1)
 
-            _len = timeseries[i].shape[0]
-            train_len = _len-self.pred_len
-            if self.train_all:
-                border1s = [0,          0,          train_len-self.seq_len]
-                border2s = [train_len,  train_len,  _len]
+            num_train = int(len(df_raw) * 0.7)
+            num_test = int(len(df_raw) * 0.2)
+            num_vali = len(df_raw) - num_train - num_test
+            border1s = [0, num_train - self.seq_len, len(df_raw) - num_test - self.seq_len]
+            border2s = [num_train, num_train + num_vali, len(df_raw)]
+            border1 = border1s[self.set_type]
+            border2 = border2s[self.set_type]
+        
+            if self.set_type == 0:
+                border2 = (border2 - self.seq_len) * self.percent // 100 + self.seq_len
+
+            if self.scale:
+                train_data = df_raw[border1s[0]:border2s[0]]
+                self.scaler.fit(train_data)
+                data = self.scaler.transform(df_raw)
             else:
-                border1s = [0,                          train_len - self.seq_len - self.pred_len, train_len-self.seq_len]
-                border2s = [train_len - self.pred_len,  train_len,                                _len]
-            border2s[0] = (border2s[0] - self.seq_len) * self.percent // 100 + self.seq_len
-            # print("_len = {}".format(_len))
-            
-            curr_len = border2s[self.set_type] - max(border1s[self.set_type], 0) - self.pred_len - self.seq_len + 1
-            curr_len = max(0, curr_len)
-            
-            self.len_seq.append(np.zeros(curr_len) + self.tot_len)
-            self.seq_id.append(np.zeros(curr_len) + i)
-            self.tot_len += curr_len
-            
-        self.len_seq = np.hstack(self.len_seq)
-        self.seq_id = np.hstack(self.seq_id)
+                data = df_raw
 
-        return timeseries
+            self.data_all.append(data[border1:border2])
+            self.len_index.append(self.len_index[-1] + border2 - border1 - self.seq_len - self.pred_len + 1)
 
     def __getitem__(self, index):
-        len_seq = self.len_seq[index]
-        seq_id = int(self.seq_id[index])
-        index = index - int(len_seq)
-
-        _len = self.timeseries[seq_id].shape[0]
-        train_len = _len - self.pred_len
-        if self.train_all:
-            border1s = [0,          0,          train_len-self.seq_len]
-            border2s = [train_len,  train_len,  _len]
-        else:
-            border1s = [0,                          train_len - self.seq_len - self.pred_len, train_len-self.seq_len]
-            border2s = [train_len - self.pred_len,  train_len,                                _len]
-        border2s[0] = (border2s[0] - self.seq_len) * self.percent // 100 + self.seq_len
-
-        s_begin = index + border1s[self.set_type]
+        i = 0
+        for i in range(len(self.len_index)):
+            if index < self.len_index[i]:
+                i -= 1
+                break
+        s_begin = index - self.len_index[i]
         s_end = s_begin + self.seq_len
         r_begin = s_end
         r_end = r_begin + self.pred_len
-        if self.set_type == 2:
-            s_end = -self.pred_len
 
-        data_x = self.timeseries[seq_id][s_begin:s_end]
-        data_y = self.timeseries[seq_id][r_begin:r_end]
-        data_x = np.expand_dims(data_x, axis=-1)
-        data_y = np.expand_dims(data_y, axis=-1)
-        # if self.set_type == 2:
-        #     print("data_x.shape = {}, data_y.shape = {}".format(data_x.shape, data_y.shape))
+        seq_x = self.data_all[i][s_begin:s_end]
+        seq_y = self.data_all[i][r_begin:r_end]
 
-        return data_x, data_y, data_x, data_y
+        return seq_x, seq_y, np.empty(shape=(self.seq_len, 0)), np.empty(shape=(self.pred_len, 0))
 
     def __len__(self):
-        if self.set_type == 0:
-            # return self.tot_len
-            return min(self.max_len, self.tot_len)
-        else:
-            return self.tot_len
+        return self.tot_len
 
 
 class Dataset_Custom_List(Dataset):

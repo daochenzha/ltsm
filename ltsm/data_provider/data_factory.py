@@ -152,6 +152,8 @@ def get_data_loaders(config, drop_last_test=True, train_all=False):
         train_all=train_all)
 
     if 'time_stamp' in config.data:
+        from sklearn.preprocessing import StandardScaler
+        scaler = StandardScaler()
         for path in data_path_all:
             if path.endswith('.csv'):
                 df_raw = pd.read_csv(path)
@@ -165,7 +167,11 @@ def get_data_loaders(config, drop_last_test=True, train_all=False):
             
             border2s[0] = (border2s[0] - config.seq_len) * percent // 100 + config.seq_len
 
-            data = df_raw.values
+            # scaling
+            train_data = df_raw[border1s[0]:border2s[0]]
+            scaler.fit(train_data.values)
+            data = scaler.transform(df_raw.values)
+
             train_set.add_data(data[border1s[0]:border2s[0]])
             val_set.add_data(data[border1s[1]:border2s[1]])
             test_set.add_data(data[border1s[2]:border2s[2]])
