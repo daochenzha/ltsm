@@ -5,7 +5,8 @@ from ltsm.data_provider.data_loader import (
     Dataset_ETT_hour,
     Dataset_ETT_minute,
     Dataset_Custom_List,
-    Dataset_Custom_List_TS
+    Dataset_Custom_List_TS,
+    Dataset_Custom_List_TS_TSF
 )
 
 import os
@@ -21,6 +22,7 @@ data_dict = {
     'ett_m': Dataset_ETT_minute,
     'custom_list': Dataset_Custom_List,
     'custom_list_time_stamp': Dataset_Custom_List_TS,
+    'tsf_list': Dataset_Custom_List_TS_TSF,
 }
 
 def get_data_loader(config, split, drop_last_test=True, train_all=False):
