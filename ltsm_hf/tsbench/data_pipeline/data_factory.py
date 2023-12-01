@@ -1,6 +1,7 @@
 import os
 import torch
 import numpy as np
+import pandas as pd
 from torch.utils.data import DataLoader
 from tsbench.data_pipeline.reader import reader_dict
 from tsbench.data_pipeline.splitter import SplitterByTimestamp
@@ -19,6 +20,7 @@ def create_datasets(
     train_ratio,
     val_ratio,
     scale_on_train=False,
+    downsample_rate=10,
 ):
     # Here, we directly load the training, validation, and testing splits
     # to aviod loading the same dataset 3 times
@@ -48,7 +50,7 @@ def create_datasets(
 
         # Step 1: Get train, val, and test splits
         # For now, we use SplitterByTimestamp only
-        sub_train_data, sub_val_data, sub_test_data = SplitterByTimestamp(
+        sub_train_data, sub_val_data, sub_test_data, buff = SplitterByTimestamp(
             seq_len,
             pred_len,
             train_ratio=train_ratio,
@@ -75,7 +77,7 @@ def create_datasets(
         )
 
         # Step 2.5 Load prompt for each instance
-        for intance_idx in range(len(sub_train_data)):
+        for intance_idx in buff:
             instance_prompt = _get_prompt(
                 prompt_data_path,  
                 sub_data_path,
@@ -96,6 +98,7 @@ def create_datasets(
         prompt=prompt_data,
         seq_len=seq_len,
         pred_len=pred_len,
+        downsample_rate=downsample_rate,
     )
 
     val_dataset = TSPromptDataset(
@@ -103,6 +106,7 @@ def create_datasets(
         prompt=prompt_data,
         seq_len=seq_len,
         pred_len=pred_len,
+        downsample_rate=downsample_rate,
     )
     
     # Testing data
@@ -125,7 +129,7 @@ def create_datasets(
 
     # Step 1: Get train, val, and test splits
     # For now, we use SplitterByTimestamp only
-    train_data, val_data, test_data = SplitterByTimestamp(
+    train_data, val_data, test_data, buff = SplitterByTimestamp(
         seq_len,
         pred_len,
         train_ratio=train_ratio,
@@ -158,7 +162,7 @@ def create_datasets(
     exit()
     """
     prompt_data = []
-    for intance_idx in range(len(train_data)):
+    for intance_idx in buff:
             instance_prompt = _get_prompt(
                 prompt_data_path,  
                 sub_data_path,
@@ -171,6 +175,7 @@ def create_datasets(
         prompt=prompt_data,
         seq_len=seq_len,
         pred_len=pred_len,
+        downsample_rate=downsample_rate,
     )
 
     return train_dataset, val_dataset, test_dataset, processor
@@ -180,6 +185,9 @@ def _get_prompt(prompt_folder_path, data_name, idx_file_name):
     prompt_name = prompt_name.replace(".tsf", "")
     prompt_path = os.path.join(prompt_folder_path, prompt_name, "T"+str(idx_file_name+1)+"_prompt.pth.tar")
     prompt_data = torch.load(prompt_path)
+    prompt_data = prompt_data.T[0]
+    
+    # ipdb.set_trace()
     prompt_data = [ prompt_data.iloc[i] for i in range(len(prompt_data)) ]
     return prompt_data
 
@@ -196,6 +204,7 @@ def get_datasets(args):
         prompt_len=args.prompt_len,
         train_ratio=args.train_ratio,
         val_ratio=args.val_ratio,
+        downsample_rate=args.downsample_rate,
     )
     print(f"Data loaded {args.test_data_path}, train size {len(train_dataset)}, val size {len(val_dataset)}, test size {len(test_dataset)}")
 

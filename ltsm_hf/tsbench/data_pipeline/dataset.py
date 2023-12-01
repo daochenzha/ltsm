@@ -53,6 +53,7 @@ class TSPromptDataset(Dataset):
         prompt,
         seq_len,
         pred_len,
+        downsample_rate=10,
     ):
         self.data = data
         self.prompt = prompt
@@ -65,10 +66,10 @@ class TSPromptDataset(Dataset):
         for sequence_index, sequence in enumerate(self.data):
             assert len(sequence) >= self.seq_len + self.pred_len, f"Sequence must have a lenth with at least seq_len + pred_len, the current length is {len(sequence)}"
             cur_offset = 0
-            for _ in range(len(sequence) - self.seq_len - self.pred_len + 1):
+            for cur_offset in range(0, len(sequence) - self.seq_len - self.pred_len + 1, downsample_rate):
                 self.item2sequence.append(sequence_index)
                 self.item2offset.append(cur_offset)
-                cur_offset += 1
+                # cur_offset += 1
                 self.num_items += 1
 
     def __getitem__(self, index):
@@ -79,6 +80,7 @@ class TSPromptDataset(Dataset):
         y_begin = x_end
         y_end = y_begin + self.pred_len
         prompt_index = self.prompt[sequence_index]
+        # ipdb.set_trace()
         
         seq_x = np.concatenate((prompt_index, self.data[sequence_index][x_begin:x_end]))
         # seq_x = self.data[sequence_index][x_begin:x_end]

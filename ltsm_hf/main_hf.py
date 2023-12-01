@@ -82,11 +82,12 @@ def get_args():
 
     parser.add_argument('--itr', type=int, default=1)
     parser.add_argument('--cos', type=int, default=0)
-    parser.add_argument('--output_dir', type=str, default='output/ltsm/')
+    parser.add_argument('--output_dir', type=str, default='output/ltsm_debug/')
     parser.add_argument('--lora', action="store_true")
     parser.add_argument('--lora_dim', type=int, default=128)
-
-    args = parser.parse_args()
+    parser.add_argument('--downsample_rate', type=int, default=100)
+    # args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
 
     return args
 
