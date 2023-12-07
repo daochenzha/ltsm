@@ -82,7 +82,7 @@ def get_args():
 
     parser.add_argument('--itr', type=int, default=1)
     parser.add_argument('--cos', type=int, default=0)
-    parser.add_argument('--output_dir', type=str, default='output/ltsm_debug/')
+    parser.add_argument('--output_dir', type=str, default='output/ltsm_train_lr0005/')
     parser.add_argument('--lora', action="store_true")
     parser.add_argument('--lora_dim', type=int, default=128)
     parser.add_argument('--downsample_rate', type=int, default=100)
@@ -119,7 +119,7 @@ def print_trainable_parameters(model):
     # pdb.set_trace()
 
 def run(args):
-
+    print(args)
     model_config = LTSMConfig(**vars(args))
     model = get_model(model_config)
 

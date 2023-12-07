@@ -1,4 +1,4 @@
-
+import os
 class DataSplitter:
     def __init__(self):
         pass
@@ -8,16 +8,25 @@ class DataSplitter:
 
 
 class SplitterByTimestamp(DataSplitter):
-    def __init__(self, seq_len, pred_len, train_ratio, val_ratio):
+    def __init__(self, seq_len, pred_len, train_ratio, val_ratio,prompt_folder_path, data_name):
         super().__init__()
         self.seq_len = seq_len
         self.pred_len = pred_len
         self.train_ratio = train_ratio
         self.val_ratio = val_ratio
+        self.prompt_folder_path = prompt_folder_path
+        self.data_name = data_name
 
     def get_splits(self, raw_data):
         train_split, val_split, test_split, buff = [], [], [], []
         for index, sequence in enumerate(raw_data):
+            # # if prompt_path exists, then we use this data
+            # prompt_name = self.data_name.split("/")[-1]
+            # prompt_name = prompt_name.replace(".tsf", "")
+            # prompt_path = os.path.join(self.prompt_folder_path, prompt_name, "T"+str(index+1)+"_prompt.pth.tar")
+            # if not os.path.exists(prompt_path):
+            #     continue
+            
             assert sequence.ndim == 1, "Time-series should be 1D."
 
             num_train = int(len(sequence) * self.train_ratio)
@@ -28,11 +37,13 @@ class SplitterByTimestamp(DataSplitter):
             if num_train < self.seq_len + self.pred_len:
                 continue
             
+            
             # We also add the previous seq_len points to the val and test sets
             train_split.append(sequence[:num_train])
             val_split.append(sequence[num_train-self.seq_len:num_train+num_val])
             test_split.append(sequence[num_train+num_val-self.seq_len:])
             buff.append(index)
+            
 
             """
             print(num_train, num_val, len(sequence)-num_train-num_val)

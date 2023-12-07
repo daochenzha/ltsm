@@ -55,6 +55,8 @@ def create_datasets(
             pred_len,
             train_ratio=train_ratio,
             val_ratio=val_ratio,
+            prompt_folder_path=prompt_data_path,
+            data_name=sub_data_path
         ).get_splits(raw_data)
 
         """
@@ -134,6 +136,8 @@ def create_datasets(
         pred_len,
         train_ratio=train_ratio,
         val_ratio=val_ratio,
+        prompt_folder_path=prompt_data_path,
+        data_name=test_data_path
     ).get_splits(raw_data)
 
     """
@@ -165,7 +169,7 @@ def create_datasets(
     for intance_idx in buff:
             instance_prompt = _get_prompt(
                 prompt_data_path,  
-                sub_data_path,
+                test_data_path,
                 intance_idx
             )
             prompt_data.append(instance_prompt)
@@ -184,6 +188,8 @@ def _get_prompt(prompt_folder_path, data_name, idx_file_name):
     prompt_name = data_name.split("/")[-1]
     prompt_name = prompt_name.replace(".tsf", "")
     prompt_path = os.path.join(prompt_folder_path, prompt_name, "T"+str(idx_file_name+1)+"_prompt.pth.tar")
+    if not os.path.exists(prompt_path):
+        return
     prompt_data = torch.load(prompt_path)
     prompt_data = prompt_data.T[0]
     
