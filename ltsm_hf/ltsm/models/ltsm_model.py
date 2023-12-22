@@ -11,8 +11,14 @@ from einops import rearrange
 from ltsm.models.embed import DataEmbedding, DataEmbedding_wo_time
 
 from transformers.modeling_utils import PreTrainedModel
+from .config import LTSMConfig
 
 class LTSM(PreTrainedModel):
+
+    config_class = LTSMConfig
+
+    # To load the LTSM model from pretrained weight, Run:
+    # LTSM.from_pretrained("/home/sl237/ltsm/ltsm_hf/output/ltsm_debug")
 
     def __init__(self, configs, device=torch.device("cpu")):
         super().__init__(configs)

@@ -4,6 +4,7 @@ from torch import nn
 import os
 import argparse
 import random
+import ipdb
 
 from tsbench.data_pipeline.data_factory import get_data_loaders, get_datasets
 from ltsm.data_provider.hf_data_loader import HF_Dataset
@@ -139,8 +140,11 @@ def run(args):
 
     print_trainable_parameters(model)
 
+    # TODO warmup step & lower lr
     model_optim = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model_optim, T_max=args.tmax, eta_min=1e-8)
+    # lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(model_optim, T_0=10, T_mult=2, eta_min=1e-8)
+    
     # early_stopping = EarlyStopping(patience=args.patience, verbose=True)
 
     def compute_metrics(p: EvalPrediction):
@@ -209,8 +213,7 @@ def run(args):
     # Overload the trainer API
     if not args.eval:
         trainer.compute_loss = compute_loss
-        trainer.prediction_step = prediction_step
-
+        trainer.prediction_step = prediction_step        
         train_results = trainer.train()
         trainer.save_model()
         trainer.log_metrics("train", train_results.metrics)

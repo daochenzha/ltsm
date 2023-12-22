@@ -173,13 +173,13 @@ def create_datasets(
                 intance_idx
             )
             prompt_data.append(instance_prompt)
-
+    # TODO : Fix this
     test_dataset = TSPromptDataset(
         data=test_data,
         prompt=prompt_data,
         seq_len=seq_len,
         pred_len=pred_len,
-        downsample_rate=downsample_rate,
+        downsample_rate=1,
     )
 
     return train_dataset, val_dataset, test_dataset, processor
