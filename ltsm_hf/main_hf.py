@@ -62,7 +62,7 @@ def get_args():
     parser.add_argument('--gpt_layers', type=int, default=3)
     parser.add_argument('--is_gpt', type=int, default=1)
     parser.add_argument('--e_layers', type=int, default=3)
-    parser.add_argument('--d_model', type=int, default=768)
+    parser.add_argument('--d_model', type=int, default=1024)
     parser.add_argument('--n_heads', type=int, default=16)
     parser.add_argument('--d_ff', type=int, default=512)
     parser.add_argument('--dropout', type=float, default=0.2)

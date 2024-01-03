@@ -30,6 +30,7 @@ def create_datasets(
 
     # Training data
     train_data, val_data, test_data, prompt_data = [], [], [], []
+    train_data1, val_data1, test_data1, prompt_data1 = [],[],[],[]
     for sub_data_path in data_path:
         test_ratio = 1.0 - train_ratio - val_ratio
         print(f"Training Loading {sub_data_path}, train {train_ratio:.2f}, val {val_ratio:.2f}, test {test_ratio:.2f}")
@@ -91,12 +92,17 @@ def create_datasets(
         train_data.extend(sub_train_data)
         val_data.extend(sub_val_data)
         test_data.extend(sub_test_data)
+        
+        train_data1.append(sub_train_data)
+        val_data1.append(sub_val_data)
+        test_data1.append(sub_test_data)
+
 
         # ipdb.set_trace()
 
     # Step 3: Create Torch datasets (samplers)
     train_dataset = TSPromptDataset(
-        data=train_data,
+        data=train_data1,
         prompt=prompt_data,
         seq_len=seq_len,
         pred_len=pred_len,
@@ -104,11 +110,11 @@ def create_datasets(
     )
 
     val_dataset = TSPromptDataset(
-        data=val_data,
+        data=val_data1,
         prompt=prompt_data,
         seq_len=seq_len,
         pred_len=pred_len,
-        downsample_rate=downsample_rate,
+        downsample_rate=27,
     )
     
     # Testing data
@@ -175,11 +181,12 @@ def create_datasets(
             prompt_data.append(instance_prompt)
     # TODO : Fix this
     test_dataset = TSPromptDataset(
-        data=test_data,
+        data=test_data1,
         prompt=prompt_data,
         seq_len=seq_len,
         pred_len=pred_len,
         downsample_rate=1,
+        uniform_sampling=False
     )
 
     return train_dataset, val_dataset, test_dataset, processor
