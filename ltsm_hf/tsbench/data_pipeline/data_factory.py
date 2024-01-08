@@ -114,7 +114,7 @@ def create_datasets(
         prompt=prompt_data,
         seq_len=seq_len,
         pred_len=pred_len,
-        downsample_rate=27,
+        downsample_rate=54,
     )
     
     # Testing data
@@ -181,7 +181,7 @@ def create_datasets(
             prompt_data.append(instance_prompt)
     # TODO : Fix this
     test_dataset = TSPromptDataset(
-        data=test_data1,
+        data=[test_data], # add 1 dimension to match the dimension of training data in dataloader
         prompt=prompt_data,
         seq_len=seq_len,
         pred_len=pred_len,

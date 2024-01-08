@@ -36,7 +36,7 @@ class LTSM(PreTrainedModel):
                 print("------------------Load pretrain from {}-----------------\n".format(configs.local_pretrain))
                 self.gpt2 = GPT2Model.from_pretrained(configs.local_pretrain, output_attentions=True, output_hidden_states=True)  # loads a pretrained GPT-2 base model
             elif configs.pretrain:
-                self.gpt2 = GPT2Model.from_pretrained('gpt2-medium', output_attentions=True, output_hidden_states=True)  # loads a pretrained GPT-2 base model
+                self.gpt2 = GPT2Model.from_pretrained('gpt2-large', output_attentions=True, output_hidden_states=True)  # loads a pretrained GPT-2 base model
             else:
                 print("------------------no pretrain------------------\n")
                 self.gpt2 = GPT2Model(GPT2Config())
