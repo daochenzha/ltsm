@@ -62,7 +62,7 @@ def get_args():
     parser.add_argument('--gpt_layers', type=int, default=3)
     parser.add_argument('--is_gpt', type=int, default=1)
     parser.add_argument('--e_layers', type=int, default=3)
-    parser.add_argument('--d_model', type=int, default=1280)
+    parser.add_argument('--d_model', type=int, default=1024)
     parser.add_argument('--n_heads', type=int, default=16)
     parser.add_argument('--d_ff', type=int, default=512)
     parser.add_argument('--dropout', type=float, default=0.2)
@@ -142,7 +142,7 @@ def run(args):
 
     # TODO warmup step & lower lr
     model_optim = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
-    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model_optim, T_max=args.tmax, eta_min=1e-8)
+    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model_optim, T_max=args.tmax, eta_min=1e-10)
     # lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(model_optim, T_0=10, T_mult=2, eta_min=1e-8)
     
     # early_stopping = EarlyStopping(patience=args.patience, verbose=True)
@@ -199,6 +199,7 @@ def run(args):
     train_dataset, eval_dataset, test_dataset, _ = get_datasets(args)
     train_dataset, eval_dataset, test_dataset = HF_Dataset(train_dataset), HF_Dataset(eval_dataset), HF_Dataset(test_dataset)
 
+    
     trainer = Trainer(
         model=model,
         args=training_args,

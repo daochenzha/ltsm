@@ -27,16 +27,17 @@ class LTSM(PreTrainedModel):
         self.pretrain = configs.pretrain
         self.stride = configs.stride
         self.patch_num = (configs.seq_len + configs.prompt_len - self.patch_size) // self.stride + 1
+        self.d_type = torch.bfloat16
 
         self.padding_patch_layer = nn.ReplicationPad1d((0, self.stride))
         self.patch_num += 1
 
         if configs.is_gpt:
-            if configs.local_pretrain != "None":
-                print("------------------Load pretrain from {}-----------------\n".format(configs.local_pretrain))
-                self.gpt2 = GPT2Model.from_pretrained(configs.local_pretrain, output_attentions=True, output_hidden_states=True)  # loads a pretrained GPT-2 base model
-            elif configs.pretrain:
-                self.gpt2 = GPT2Model.from_pretrained('gpt2-large', output_attentions=True, output_hidden_states=True)  # loads a pretrained GPT-2 base model
+            # if configs.local_pretrain != "None":
+            #     print("------------------Load pretrain from {}-----------------\n".format(configs.local_pretrain))
+            #     self.gpt2 = GPT2Model.from_pretrained(configs.local_pretrain, output_attentions=True, output_hidden_states=True)  # loads a pretrained GPT-2 base model
+            if configs.pretrain:
+                self.gpt2 = GPT2Model.from_pretrained('gpt2-medium',output_attentions=True, output_hidden_states=True)  # loads a pretrained GPT-2 base model
             else:
                 print("------------------no pretrain------------------\n")
                 self.gpt2 = GPT2Model(GPT2Config())
@@ -62,12 +63,11 @@ class LTSM(PreTrainedModel):
 
     def forward(self, x, iters=None):
         B, L, M = x.shape
-
+        
         means = x.mean(1, keepdim=True).detach()
         x = x - means
         stdev = torch.sqrt(torch.var(x, dim=1, keepdim=True, unbiased=False)+ 1e-5).detach()
         x /= stdev
-
         x = rearrange(x, 'b l m -> b m l')
 
         x = self.padding_patch_layer(x)

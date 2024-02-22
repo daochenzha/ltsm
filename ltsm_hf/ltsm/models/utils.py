@@ -8,6 +8,9 @@ def get_model(config):
         model = DLinear(config)
     else:
         from ltsm.models.ltsm_model import LTSM
-        model = LTSM(config)
+        if config.local_pretrain == "None":
+            model = LTSM(config)
+        else:
+            model = LTSM.from_pretrained(config.local_pretrain, config=config)
 
     return model

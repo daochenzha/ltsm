@@ -19,6 +19,8 @@ class SplitterByTimestamp(DataSplitter):
 
     def get_splits(self, raw_data):
         train_split, val_split, test_split, buff = [], [], [], []
+        cols = raw_data.columns[1:]
+        raw_data = raw_data[cols].T.values.tolist()
         for index, sequence in enumerate(raw_data):
             # # if prompt_path exists, then we use this data
             # prompt_name = self.data_name.split("/")[-1]
@@ -26,6 +28,9 @@ class SplitterByTimestamp(DataSplitter):
             # prompt_path = os.path.join(self.prompt_folder_path, prompt_name, "T"+str(index+1)+"_prompt.pth.tar")
             # if not os.path.exists(prompt_path):
             #     continue
+            
+            
+            # index: the number of sequences. buff append the name of index. index is the column of the raw_data.
             
             assert sequence.ndim == 1, "Time-series should be 1D."
 
