@@ -40,7 +40,7 @@ def create_csv_datasets(
         
         df_data = pd.read_csv(sub_data_path)
         cols = df_data.columns[1:] 
-        raw_data = df_data[cols].T.values.tolist()
+        raw_data = df_data[cols].T.values
         
         # Step 0: Read data, the output is a list of 1-d time-series
         # raw_data = reader_dict[dir_name](sub_data_path).fetch()
@@ -130,10 +130,12 @@ def create_csv_datasets(
     print(f"Testing Loading {test_data_path}, train {train_ratio:.2f}, val {val_ratio:.2f}, test {test_ratio:.2f}")
 
     # We parse the datapath to get the dataset class
-    dir_name = os.path.split(os.path.dirname(test_data_path))[-1]
+    # dir_name = os.path.split(os.path.dirname(test_data_path))[-1]
 
     # Step 0: Read data, the output is a list of 1-d time-series
-    raw_data = reader_dict[dir_name](test_data_path).fetch()
+    df_data = pd.read_csv(test_data_path)
+    cols = df_data.columns[1:] 
+    raw_data = df_data[cols].T.values
     """
     print(len(raw_data))
     print(raw_data[0])
@@ -152,7 +154,7 @@ def create_csv_datasets(
         val_ratio=val_ratio,
         prompt_folder_path=prompt_data_path,
         data_name=test_data_path
-    ).get_splits(raw_data)
+    ).get_splits(df_data)
 
     """
     print(len(train_data), train_data[0].shape)
@@ -197,7 +199,7 @@ def create_csv_datasets(
         uniform_sampling=False
     )
 
-    return train_dataset, val_dataset, test_dataset, processor
+    return train_dataset, val_dataset,test_dataset, processor
 
 def create_datasets(
     data_path,
@@ -385,10 +387,16 @@ def create_datasets(
 def _get_prompt(prompt_folder_path, data_name, idx_file_name):
     prompt_name = data_name.split("/")[-1]
     prompt_name = prompt_name.replace(".tsf", "")
-    prompt_path = os.path.join(prompt_folder_path, prompt_name, "T"+str(idx_file_name+1)+"_prompt.pth.tar")
+    data_path = data_name.split('/')[-2]+'/'+data_name.split('/')[-1].split('.')[0]
+    idx_file_name = idx_file_name.replace("/", "-")
+    
+    prompt_path = os.path.join(prompt_folder_path,data_path+'_'+str(idx_file_name)+"_prompt.pth.tar")
     if not os.path.exists(prompt_path):
+        print(f"Prompt file {prompt_path} does not exist")
         return
+    
     prompt_data = torch.load(prompt_path)
+    
     prompt_data = prompt_data.T[0]
     
     # ipdb.set_trace()
@@ -424,9 +432,9 @@ def get_datasets(args):
             val_ratio=args.val_ratio,
             downsample_rate=args.downsample_rate,
         )
-    print(f"Data loaded {args.test_data_path}, train size {len(train_dataset)}, val size {len(val_dataset)}, test size {len(test_dataset)}")
-
-    return train_dataset, val_dataset, test_dataset, processor
+    # print(f"Data loaded {args.test_data_path}, train size {len(train_dataset)}, val size {len(val_dataset)}, test size {len(test_dataset)}")
+    print(f"Data loaded {args.test_data_path}, train size {len(train_dataset)}, val size {len(val_dataset)}, test size {len(test_dataset)} ")
+    return train_dataset, val_dataset,test_dataset, processor
     
 def get_data_loaders(args):
 

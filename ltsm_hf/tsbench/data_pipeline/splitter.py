@@ -17,11 +17,11 @@ class SplitterByTimestamp(DataSplitter):
         self.prompt_folder_path = prompt_folder_path
         self.data_name = data_name
 
-    def get_splits(self, raw_data):
+    def get_splits(self, df_data):
         train_split, val_split, test_split, buff = [], [], [], []
-        cols = raw_data.columns[1:]
-        raw_data = raw_data[cols].T.values.tolist()
-        for index, sequence in enumerate(raw_data):
+        cols = df_data.columns[1:]
+        raw_data = df_data[cols].T.values
+        for col, sequence in zip(cols, raw_data):
             # # if prompt_path exists, then we use this data
             # prompt_name = self.data_name.split("/")[-1]
             # prompt_name = prompt_name.replace(".tsf", "")
@@ -47,7 +47,7 @@ class SplitterByTimestamp(DataSplitter):
             train_split.append(sequence[:num_train])
             val_split.append(sequence[num_train-self.seq_len:num_train+num_val])
             test_split.append(sequence[num_train+num_val-self.seq_len:])
-            buff.append(index)
+            buff.append(col)
             
 
             """
