@@ -33,7 +33,7 @@ def get_args():
     parser.add_argument('--prompt_data_path', type=str, default='./weather.csv')
     parser.add_argument('--data_processing', type=str, default="standard_scaler")
     parser.add_argument('--train_ratio', type=float, default=0.7)
-    parser.add_argument('--val_ratio', type=float, default=0.2)
+    parser.add_argument('--val_ratio', type=float, default=0.1)
 
     parser.add_argument('--data', type=str, default='custom')
     parser.add_argument('--features', type=str, default='M')
@@ -142,7 +142,7 @@ def run(args):
 
     # TODO warmup step & lower lr
     model_optim = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
-    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model_optim, T_max=args.tmax, eta_min=1e-10)
+    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model_optim, T_max=args.tmax, eta_min=1e-8)
     # lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(model_optim, T_0=10, T_mult=2, eta_min=1e-8)
     
     # early_stopping = EarlyStopping(patience=args.patience, verbose=True)
@@ -154,7 +154,8 @@ def run(args):
             label_ids = np.squeeze(p.label_ids)
         else:
             label_ids = p.label_ids
-        return {"mse": ((preds - label_ids) ** 2).mean().item(),
+        return {
+                "mse": ((preds - label_ids) ** 2).mean().item(),
                 "mae": (np.abs(preds - label_ids)).mean().item()}
 
     def compute_loss(model, inputs, return_outputs=False):
@@ -170,8 +171,13 @@ def run(args):
 
     @torch.no_grad()
     def prediction_step(model, inputs, prediction_loss_only=False, ignore_keys=None):
+        # CSV
         input_data = inputs["input_data"].to(model.module.device)
         labels = inputs["labels"].to(model.module.device)
+        
+        # monash
+        # input_data = inputs["input_data"].to(model.device)
+        # labels = inputs["labels"].to(model.device)
         outputs = model(input_data)
         loss = nn.functional.mse_loss(outputs, labels)
         return (loss, outputs, labels)
@@ -184,12 +190,12 @@ def run(args):
         evaluation_strategy="steps",
         num_train_epochs=args.train_epochs,
         fp16=False,
-        save_steps=25,
+        save_steps=100,
         eval_steps=25,
         logging_steps=5,
         learning_rate=args.learning_rate,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
-        save_total_limit=3,
+        save_total_limit=10,
         remove_unused_columns=False,
         push_to_hub=False,
         load_best_model_at_end=True,
@@ -198,8 +204,9 @@ def run(args):
     # Training settings
     train_dataset, eval_dataset, test_dataset, _ = get_datasets(args)
     train_dataset, eval_dataset, test_dataset = HF_Dataset(train_dataset), HF_Dataset(eval_dataset), HF_Dataset(test_dataset)
-
     
+    # from transformers import AutoTokenizer, PatchTSTForPrediction
+    # model = PatchTSTForPrediction.from_pretrained("namctin/patchtst_etth1_forecast")
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -223,11 +230,18 @@ def run(args):
 
     # Testing settings
     for data_path in args.test_data_path_list:
+        trainer.compute_loss = compute_loss
+        trainer.prediction_step = prediction_step   
         args.test_data_path = data_path
         _, _, test_dataset, _ = get_datasets(args)
         test_dataset = HF_Dataset(test_dataset)
+        # data_pred = trainer.predict(test_dataset)
+        
 
         metrics = trainer.evaluate(test_dataset)
+        # ipdb.set_trace()
+        # np.save('/home/sl237/ltsm/ltsm_hf/scripts/' + 'preds.npy', metrics['preds'])
+        # np.save('/home/sl237/ltsm/ltsm_hf/scripts/' + 'trues.npy', metrics['trues'])
         trainer.log_metrics("Test", metrics)
         trainer.save_metrics("Test", metrics)
 
