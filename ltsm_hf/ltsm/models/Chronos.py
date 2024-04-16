@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch import optim
 import ipdb
 
-from transformers.models.gpt2.modeling_gpt2 import GPT2Model
+from transformers.models.gpt2.modeling_gpt2 import GPT2Model,GPT2LMHeadModel
 from transformers.models.gpt2.configuration_gpt2 import GPT2Config
 from einops import rearrange
 
@@ -13,7 +13,12 @@ from ltsm.models.embed import DataEmbedding, DataEmbedding_wo_time
 from transformers.modeling_utils import PreTrainedModel
 from .config import LTSMConfig
 
-class LTSM(PreTrainedModel):
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from dataclasses import dataclass
+
+
+
+class Chronos(PreTrainedModel):
 
     config_class = LTSMConfig
 
@@ -28,6 +33,8 @@ class LTSM(PreTrainedModel):
         self.stride = configs.stride
         self.patch_num = (configs.seq_len + configs.prompt_len - self.patch_size) // self.stride + 1
         self.d_type = torch.bfloat16
+        self.pred_len = configs.pred_len    
+        self.seq_len = configs.seq_len
 
         self.padding_patch_layer = nn.ReplicationPad1d((0, self.stride))
         self.patch_num += 1
@@ -41,11 +48,14 @@ class LTSM(PreTrainedModel):
             else:
                 print("------------------no pretrain------------------\n")
                 self.gpt2 = GPT2Model(GPT2Config())
-            self.gpt2.h = self.gpt2.h[:configs.gpt_layers]
             print("gpt2 = {}".format(self.gpt2))
 
-        self.in_layer = nn.Linear(configs.patch_size, configs.d_model)
-        self.out_layer = nn.Linear(configs.d_model * self.patch_num, configs.pred_len)
+        # self.in_layer = nn.Linear(configs.patch_size, configs.d_model)
+        # self.out_layer = nn.Linear(configs.d_model * self.patch_num, configs.pred_len)
+        
+
+        
+
 
         # if configs.freeze and configs.pretrain:
         #     for i, (name, param) in enumerate(self.gpt2.named_parameters()):
@@ -58,32 +68,52 @@ class LTSM(PreTrainedModel):
         #     layer.to(device=device)
         #     layer.train()
 
-        self.cnt = 0
+        # self.cnt = 0
 
 
-    def forward(self, x, iters=None):
+    def forward(self, x, scale,  iters=None):
         B, L, M = x.shape
-             
-        means = x.mean(1, keepdim=True).detach()
         # ipdb.set_trace()
-        x = x - means
-        stdev = torch.sqrt(torch.var(x, dim=1, keepdim=True, unbiased=False)+ 1e-5).detach()
-        x /= stdev
-        x = rearrange(x, 'b l m -> b m l')
+        # means = x.mean(1, keepdim=True).detach()
+        # ipdb.set_trace()
+        # x = x - means
+        # stdev = torch.sqrt(torch.var(x, dim=1, keepdim=True, unbiased=False)+ 1e-5).detach()
+        # x /= stdev
+        # x = rearrange(x, 'b l m -> b m l')
+        x = x.reshape(B*M, L)
+        # x = self.padding_patch_layer(x)
+        # x = x.unfold(dimension=-1, size=self.patch_size, step=self.stride)
+        # x = rearrange(x, 'b m n p -> (b m) n p')
 
-        x = self.padding_patch_layer(x)
-        x = x.unfold(dimension=-1, size=self.patch_size, step=self.stride)
-        x = rearrange(x, 'b m n p -> (b m) n p')
-
-        outputs = self.in_layer(x)
+        # outputs = self.in_layer(x)
+        print('x.shape:',x.shape)
+        token_ids, attention_mask, scale = self.tokenizer.input_transform(x)
+        
+        print("token_ids = {}".format(token_ids))
+        print(token_ids.shape)
+        
         if self.is_gpt:
-            outputs = self.gpt2(inputs_embeds=outputs).last_hidden_state
+            outputs = self.gpt2(input_ids=token_ids, attention_mask=attention_mask ).last_hidden_state
 
-        # ipdb.set_trace()
-        outputs = self.out_layer(outputs.reshape(B*M, -1))
-        outputs = rearrange(outputs, '(b m) l -> b l m', b=B)
+        
+        token_ids_argmax = torch.argmax(outputs, dim=-1)
+        print('outputs.shape',outputs.shape)
+        print('token_ids_argmax.shape',token_ids_argmax.shape)
+        print('token_ids_argmax',token_ids_argmax)
+        token_ids_argmax = token_ids_argmax.reshape(B, 1, L)
+        prediction = self.tokenizer.output_transform(
+            token_ids_argmax, scale
+        )
+        
+        outputs = prediction.reshape(B, L,M).to(x.device)   
+        print('outputs.shape',outputs.shape)
+        
+        # outputs = self.out_layer(outputs.reshape(B*M, -1))
+        # outputs = rearrange(outputs, '(b m) l -> b l m', b=B)
+        
+        
 
         outputs = outputs * stdev
         outputs = outputs + means
 
-        return outputs
+        return outputs[:, :self.pred_len, :]

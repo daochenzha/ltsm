@@ -66,7 +66,7 @@ def get_args():
     parser.add_argument('--n_heads', type=int, default=16)
     parser.add_argument('--d_ff', type=int, default=512)
     parser.add_argument('--dropout', type=float, default=0.2)
-    parser.add_argument('--enc_in', type=int, default=862)
+    parser.add_argument('--enc_in', type=int, default=1)
     parser.add_argument('--c_out', type=int, default=862)
     parser.add_argument('--patch_size', type=int, default=16)
     parser.add_argument('--kernel_size', type=int, default=25)
@@ -87,6 +87,8 @@ def get_args():
     parser.add_argument('--lora', action="store_true")
     parser.add_argument('--lora_dim', type=int, default=128)
     parser.add_argument('--downsample_rate', type=int, default=100)
+    parser.add_argument('--llm_layers', type=int, default=32)
+
     # args = parser.parse_args()
     args, unknown = parser.parse_known_args()
 

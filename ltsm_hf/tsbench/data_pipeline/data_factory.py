@@ -9,6 +9,8 @@ from tsbench.data_pipeline.data_processing import processor_dict
 from tsbench.data_pipeline.dataset import TSDataset,  TSPromptDataset, TSPromptDatasetTXT
 import ipdb
 
+data2index = {"ETTh1": 0, "ETTh2": 1, "ETTm1": 2, "ETTm2": 3,"electricity":4, "exchange_rate":5, "traffic":6, "weather":7}
+
 def create_csv_datasets(
     data_path,
     test_data_path,
@@ -27,20 +29,14 @@ def create_csv_datasets(
 
     # TODO: we can support using only a percentage of the training data
     # However, this could be confusing. Thus, we will only do it when needed
-    if 'text' in prompt_data_path:
-        get_prompt = _get_txt_prompt
-        TimeSeriesDataset = TSPromptDatasetTXT
-    else:
-        get_prompt = _get_csv_prompt
-        TimeSeriesDataset = TSPromptDataset
 
-        
+
     # Training data
     train_data, val_data, test_data, train_prompt_data, val_prompt_data, test_prompt_data = [], [], [], [], [], []
     train_data1, val_data1, test_data1, prompt_data1 = [],[],[],[]
     for sub_data_path in data_path:
         
-
+        data_name = sub_data_path.split('/')[-1].split('.')[0]
         # We parse the datapath to get the dataset class
         # dir_name = os.path.split(os.path.dirname(sub_data_path))[-1]
         sub_train_ratio = train_ratio
@@ -109,21 +105,21 @@ def create_csv_datasets(
         # Train Prompt
         train_prompt_data_path = prompt_data_path + '/train'
         for train_intance_idx in buff:
-            instance_prompt =get_prompt(
-                train_prompt_data_path,  
-                sub_data_path,
-                train_intance_idx
-            )
-            train_prompt_data.append(instance_prompt)
+            # instance_prompt =_get_csv_prompt(
+            #     train_prompt_data_path,  
+            #     sub_data_path,
+            #     train_intance_idx
+            # )
+            train_prompt_data.append([data2index[data_name]])
         
         val_prompt_data_path = prompt_data_path + '/val'
         for val_intance_idx in buff:
-            instance_prompt = get_prompt(
-                val_prompt_data_path,  
-                sub_data_path,
-                val_intance_idx
-            )
-            val_prompt_data.append(instance_prompt)
+            # instance_prompt = _get_csv_prompt(
+            #     val_prompt_data_path,  
+            #     sub_data_path,
+            #     val_intance_idx
+            # )
+            val_prompt_data.append([data2index[data_name]])
 
         # Step 2.5: Merge the list of data
         train_data.extend(sub_train_data)
@@ -138,7 +134,7 @@ def create_csv_datasets(
         # ipdb.set_trace()
 
     # Step 3: Create Torch datasets (samplers)
-    train_dataset = TimeSeriesDataset(
+    train_dataset = TSPromptDataset(
         data=train_data1,
         prompt=train_prompt_data,
         seq_len=seq_len,
@@ -147,7 +143,7 @@ def create_csv_datasets(
         uniform_sampling=False
     )
 
-    val_dataset = TimeSeriesDataset(
+    val_dataset = TSPromptDataset(
         data=val_data1,
         prompt=val_prompt_data,
         seq_len=seq_len,
@@ -173,6 +169,7 @@ def create_csv_datasets(
     # dir_name = os.path.split(os.path.dirname(test_data_path))[-1]
 
     # Step 0: Read data, the output is a list of 1-d time-series
+    test_data_name = test_data_path.split('/')[-1].split('.')[0]
     df_data = pd.read_csv(test_data_path)
     cols = df_data.columns[1:] 
     raw_data = df_data[cols].T.values
@@ -224,14 +221,14 @@ def create_csv_datasets(
     test_prompt_data = []
     test_prompt_data_path = prompt_data_path + "/test"
     for test_intance_idx in buff:
-            instance_prompt = get_prompt(
-                test_prompt_data_path,  
-                test_data_path,
-                test_intance_idx
-            )
-            test_prompt_data.append(instance_prompt)
+            # instance_prompt = _get_csv_prompt(
+            #     test_prompt_data_path,  
+            #     test_data_path,
+            #     test_intance_idx
+            # )
+            test_prompt_data.append([data2index[test_data_name]])
     # TODO : Fix this
-    test_dataset = TimeSeriesDataset(
+    test_dataset = TSPromptDataset(
         data=[test_data], # add 1 dimension to match the dimension of training data in dataloader
         prompt=test_prompt_data,
         seq_len=seq_len,
@@ -457,20 +454,20 @@ def _get_csv_prompt(prompt_folder_path, data_name, idx_file_name):
     prompt_data = [ prompt_data.iloc[i] for i in range(len(prompt_data)) ]
     return prompt_data
 
-def _get_txt_prompt(prompt_folder_path, data_name, idx_file_name):
-    prompt_name = data_name.split("/")[-1]
-    prompt_name = prompt_name.replace(".tsf", "")
-    data_path = data_name.split('/')[-1].split('.')[0]
-    prompt_folder_path,data_path = "/home/sl237/ltsm/ltsm/dataset/prompt_bank/"
-    txt_prompt_path = os.path.join(prompt_folder_path,data_path, data_path+".txt")
-    if not os.path.exists(txt_prompt_path):
-        print(f"Prompt file {txt_prompt_path} does not exist")
-        return
+# def _get_txt_prompt(prompt_folder_path, data_name, idx_file_name):
+#     prompt_name = data_name.split("/")[-1]
+#     prompt_name = prompt_name.replace(".tsf", "")
+#     data_path = data_name.split('/')[-1].split('.')[0]
+#     prompt_folder_path,data_path = "/home/sl237/ltsm/ltsm/dataset/prompt_bank/"
+#     txt_prompt_path = os.path.join(prompt_folder_path,data_path, data_path+".txt")
+#     if not os.path.exists(txt_prompt_path):
+#         print(f"Prompt file {txt_prompt_path} does not exist")
+#         return
     
-    with open(txt_prompt_path, 'r') as file:
-        txt_prompt = file.read()
+#     with open(txt_prompt_path, 'r') as file:
+#         txt_prompt = file.read()
 
-    return txt_prompt
+#     return txt_prompt
 
 
 def get_datasets(args):
