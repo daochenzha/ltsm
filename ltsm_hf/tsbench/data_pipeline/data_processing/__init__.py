@@ -7,4 +7,3 @@ def register_processor(module):
     processor_dict[module.module_id] = module
 
 register_processor(StandardScaler)
-# register_processor(ChronosConfig)

@@ -22,6 +22,7 @@ def get_args():
     parser = argparse.ArgumentParser(description='LTSM')
 
     parser.add_argument('--model_id', type=str, required=True, default='test_run')
+    parser.add_argument('--model_name_or_path', type=str, default="gpt2-medium") # google/gemma-2b, meta-llama/Llama-2-7b-hf
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--device', type=str, default="cuda:0")
     parser.add_argument('--checkpoints', type=str, default='./checkpoints/')
@@ -206,7 +207,7 @@ def run(args):
     # Training settings
     train_dataset, eval_dataset, test_dataset, _ = get_datasets(args)
     train_dataset, eval_dataset, test_dataset = HF_Dataset(train_dataset), HF_Dataset(eval_dataset), HF_Dataset(test_dataset)
-    
+
     # from transformers import AutoTokenizer, PatchTSTForPrediction
     # model = PatchTSTForPrediction.from_pretrained("namctin/patchtst_etth1_forecast")
     trainer = Trainer(

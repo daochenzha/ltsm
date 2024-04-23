@@ -4,8 +4,9 @@ import torch.nn as nn
 from torch import optim
 import ipdb
 
-from transformers.models.gpt2.modeling_gpt2 import GPT2Model
-from transformers.models.gpt2.configuration_gpt2 import GPT2Config
+# from transformers.models.gpt2.modeling_gpt2 import GPT2Model
+# from transformers.models.gpt2.configuration_gpt2 import GPT2Config
+from transformers import AutoModel, AutoConfig, GPT2Model, LlamaModel
 from einops import rearrange
 
 from ltsm.models.embed import DataEmbedding, DataEmbedding_wo_time
@@ -28,33 +29,40 @@ class LTSM(PreTrainedModel):
         self.stride = configs.stride
         self.patch_num = (configs.seq_len + configs.prompt_len - self.patch_size) // self.stride + 1
         self.d_type = torch.bfloat16
+        self.configs = configs
 
         self.padding_patch_layer = nn.ReplicationPad1d((0, self.stride))
         self.patch_num += 1
 
         if configs.is_gpt:
-            # if configs.local_pretrain != "None":
-            #     print("------------------Load pretrain from {}-----------------\n".format(configs.local_pretrain))
-            #     self.gpt2 = GPT2Model.from_pretrained(configs.local_pretrain, output_attentions=True, output_hidden_states=True)  # loads a pretrained GPT-2 base model
-            if configs.pretrain:
-                self.gpt2 = GPT2Model.from_pretrained('gpt2-medium',output_attentions=True, output_hidden_states=True)  # loads a pretrained GPT-2 base model
-            else:
-                print("------------------no pretrain------------------\n")
-                self.gpt2 = GPT2Model(GPT2Config())
-            self.gpt2.h = self.gpt2.h[:configs.gpt_layers]
-            print("gpt2 = {}".format(self.gpt2))
 
-        self.in_layer = nn.Linear(configs.patch_size, configs.d_model)
-        self.out_layer = nn.Linear(configs.d_model * self.patch_num, configs.pred_len)
+            if configs.pretrain:
+                self.llm_config = AutoConfig.from_pretrained(configs.model_name_or_path)
+                self.llm = AutoModel.from_pretrained(configs.model_name_or_path,
+                                                     output_attentions=True,
+                                                     output_hidden_states=True,
+                                                     # torch_dtype=torch.bfloat16,
+                                                     # use_flash_attention_2=True,
+                                                     cache_dir="/scratch")  # loads a pretrained GPT-2 base model
+                # self.llm = GPT2Model.from_pretrained('gpt2-medium', output_attentions=True,
+                #                                   output_hidden_states=True)  # loads a pretrained GPT-2 base model
+            else:
+                raise NotImplementedError("You must load the pretraining weight.")
+
+            self.model_prune(configs)
+            print("gpt2 = {}".format(self.llm))
+
+        self.in_layer = nn.Linear(configs.patch_size, self.llm_config.hidden_size)
+        self.out_layer = nn.Linear(self.llm_config.hidden_size * self.patch_num, configs.pred_len)
 
         # if configs.freeze and configs.pretrain:
-        #     for i, (name, param) in enumerate(self.gpt2.named_parameters()):
+        #     for i, (name, param) in enumerate(self.llm.named_parameters()):
         #         if 'ln' in name or 'wpe' in name:
         #             param.requires_grad = True
         #         else:
         #             param.requires_grad = False
         #
-        # for layer in (self.gpt2, self.in_layer, self.out_layer):
+        # for layer in (self.llm, self.in_layer, self.out_layer):
         #     layer.to(device=device)
         #     layer.train()
 
@@ -63,7 +71,7 @@ class LTSM(PreTrainedModel):
 
     def forward(self, x, iters=None):
         B, L, M = x.shape
-             
+
         means = x.mean(1, keepdim=True).detach()
         # ipdb.set_trace()
         x = x - means
@@ -77,7 +85,7 @@ class LTSM(PreTrainedModel):
 
         outputs = self.in_layer(x)
         if self.is_gpt:
-            outputs = self.gpt2(inputs_embeds=outputs).last_hidden_state
+            outputs = self.llm(inputs_embeds=outputs).last_hidden_state
 
         # ipdb.set_trace()
         outputs = self.out_layer(outputs.reshape(B*M, -1))
@@ -87,3 +95,17 @@ class LTSM(PreTrainedModel):
         outputs = outputs + means
 
         return outputs
+
+    def model_prune(self, configs):
+
+        if type(self.llm) == GPT2Model:
+            self.llm.h = self.llm.h[:configs.gpt_layers]
+
+        elif type(self.llm) == LlamaModel or type(self.llm) == GemmaModel:
+            self.llm.layers = self.llm.layers[:configs.gpt_layers]
+
+        else:
+            raise NotImplementedError(f"No implementation for {self.llm}.")
+
+
+        
