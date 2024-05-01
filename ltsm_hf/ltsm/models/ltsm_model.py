@@ -37,12 +37,13 @@ class LTSM(PreTrainedModel):
         if configs.is_gpt:
 
             if configs.pretrain:
+                print("Loading the pretraining weight.")
                 self.llm_config = AutoConfig.from_pretrained(configs.model_name_or_path)
                 self.llm = AutoModel.from_pretrained(configs.model_name_or_path,
                                                      output_attentions=True,
                                                      output_hidden_states=True,
-                                                     # torch_dtype=torch.bfloat16,
-                                                     # use_flash_attention_2=True,
+                                                     torch_dtype=torch.bfloat16,
+                                                     attn_implementation="flash_attention_2",
                                                      cache_dir="/scratch")  # loads a pretrained GPT-2 base model
                 # self.llm = GPT2Model.from_pretrained('gpt2-medium', output_attentions=True,
                 #                                   output_hidden_states=True)  # loads a pretrained GPT-2 base model
@@ -51,6 +52,7 @@ class LTSM(PreTrainedModel):
 
             self.model_prune(configs)
             print("gpt2 = {}".format(self.llm))
+
 
         self.in_layer = nn.Linear(configs.patch_size, self.llm_config.hidden_size)
         self.out_layer = nn.Linear(self.llm_config.hidden_size * self.patch_num, configs.pred_len)
@@ -82,12 +84,12 @@ class LTSM(PreTrainedModel):
         x = self.padding_patch_layer(x)
         x = x.unfold(dimension=-1, size=self.patch_size, step=self.stride)
         x = rearrange(x, 'b m n p -> (b m) n p')
-
-        outputs = self.in_layer(x)
+        outputs = self.in_layer(x).to(dtype=torch.bfloat16)
         if self.is_gpt:
             outputs = self.llm(inputs_embeds=outputs).last_hidden_state
 
         # ipdb.set_trace()
+        outputs = outputs.to(dtype=x.dtype)
         outputs = self.out_layer(outputs.reshape(B*M, -1))
         outputs = rearrange(outputs, '(b m) l -> b l m', b=B)
 
