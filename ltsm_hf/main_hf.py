@@ -28,7 +28,6 @@ def get_args():
     parser.add_argument('--checkpoints', type=str, default='./checkpoints/')
 
     parser.add_argument('--data_path', nargs='+', default='dataset/weather.csv')
-    # parser.add_argument('--data_path', type=str, default='dataset/weather.csv')
     parser.add_argument('--test_data_path', type=str, default='dataset/weather.csv')
     parser.add_argument('--test_data_path_list', nargs='+', required=True)
     parser.add_argument('--prompt_data_path', type=str, default='./weather.csv')
@@ -90,7 +89,6 @@ def get_args():
     parser.add_argument('--downsample_rate', type=int, default=100)
     parser.add_argument('--llm_layers', type=int, default=32)
 
-    # args = parser.parse_args()
     args, unknown = parser.parse_known_args()
 
     return args
@@ -119,17 +117,16 @@ def print_trainable_parameters(model):
         if p.requires_grad:
             print(f"{n} is trainable...")
 
-    # import pdb
-    # pdb.set_trace()
 
 def run(args):
     print(args)
+    
     model_config = LTSMConfig(**vars(args))
     model = get_model(model_config)
 
     if args.lora:
         peft_config = LoraConfig(
-            target_modules=["c_attn"],  # ["q", "v"],
+            target_modules=["c_attn"],
             inference_mode=False,
             r=args.lora_dim,
             lora_alpha=32,
@@ -137,19 +134,17 @@ def run(args):
         )
         model = get_peft_model(model, peft_config)
         model.print_trainable_parameters()
-
+    
     elif args.freeze:
         freeze_parameters(model)
 
     print_trainable_parameters(model)
 
-    # TODO warmup step & lower lr
+    # Optimizer settings
     model_optim = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model_optim, T_max=args.tmax, eta_min=1e-8)
-    # lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(model_optim, T_0=10, T_mult=2, eta_min=1e-8)
-    
-    # early_stopping = EarlyStopping(patience=args.patience, verbose=True)
 
+    # Evaluation metrics
     def compute_metrics(p: EvalPrediction):
         preds = p.predictions[0] if isinstance(p.predictions, tuple) else p.predictions
         preds = np.squeeze(preds)
@@ -161,17 +156,20 @@ def run(args):
                 "mse": ((preds - label_ids) ** 2).mean().item(),
                 "mae": (np.abs(preds - label_ids)).mean().item()}
 
+    # Loss function
     def compute_loss(model, inputs, return_outputs=False):
         outputs = model(inputs["input_data"])
         loss = nn.functional.mse_loss(outputs, inputs["labels"])
         return (loss, outputs) if return_outputs else loss
 
+    # Data collator
     def collate_fn(batch):
         return {
             'input_data': torch.from_numpy(np.stack([x['input_data'] for x in batch])).type(torch.float32),
             'labels': torch.from_numpy(np.stack([x['labels'] for x in batch])).type(torch.float32),
         }
 
+    # Prediction step
     @torch.no_grad()
     def prediction_step(model, inputs, prediction_loss_only=False, ignore_keys=None):
         # CSV
@@ -185,7 +183,7 @@ def run(args):
         loss = nn.functional.mse_loss(outputs, labels)
         return (loss, outputs, labels)
 
-
+    # Training settings
     training_args = TrainingArguments(
         output_dir=args.output_dir,
         per_device_train_batch_size=args.batch_size,
@@ -204,12 +202,10 @@ def run(args):
         load_best_model_at_end=True,
     )
 
-    # Training settings
+    # Data settings
     train_dataset, eval_dataset, test_dataset, _ = get_datasets(args)
     train_dataset, eval_dataset, test_dataset = HF_Dataset(train_dataset), HF_Dataset(eval_dataset), HF_Dataset(test_dataset)
 
-    # from transformers import AutoTokenizer, PatchTSTForPrediction
-    # model = PatchTSTForPrediction.from_pretrained("namctin/patchtst_etth1_forecast")
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -238,13 +234,8 @@ def run(args):
         args.test_data_path = data_path
         _, _, test_dataset, _ = get_datasets(args)
         test_dataset = HF_Dataset(test_dataset)
-        # data_pred = trainer.predict(test_dataset)
-        
 
         metrics = trainer.evaluate(test_dataset)
-        # ipdb.set_trace()
-        # np.save('/home/sl237/ltsm/ltsm_hf/scripts/' + 'preds.npy', metrics['preds'])
-        # np.save('/home/sl237/ltsm/ltsm_hf/scripts/' + 'trues.npy', metrics['trues'])
         trainer.log_metrics("Test", metrics)
         trainer.save_metrics("Test", metrics)
 
