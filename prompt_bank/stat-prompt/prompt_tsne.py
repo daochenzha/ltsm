@@ -52,9 +52,7 @@ def prompt_prune(pt):
 
 if __name__ == "__main__":
 
-    # root_path = "./prompt_data_normalize_csv/"
-    root_path = "./prompt_data_normalize_csv_split/"
-    # data_path_buf = data_paths(root_path)
+    root_path = "./prompt_bank/stat-prompt/prompt_data_split/"
     # print(data_path_buf)
 
     dataset_name = [
@@ -127,7 +125,7 @@ if __name__ == "__main__":
             # plt.text(prompt_data_tsne[data_index, 0].mean()-20, prompt_data_tsne[data_index, 1].mean(), str(dataset_name[index][0:8]), fontdict={'weight': 'bold', 'size': 9})
 
     plt.legend(loc="right")
-    plt.savefig("./prompt_csv_tsne.png")
+    plt.savefig("./figures/stat_prompt_tsne.png")
     plt.close()
 
     # ipdb.set_trace()
