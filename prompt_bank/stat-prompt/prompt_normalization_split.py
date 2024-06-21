@@ -14,20 +14,7 @@ from ltsm.data_provider.data_factory import data_paths
 
 def get_args():
     parser = argparse.ArgumentParser(description='LTSM')
-
-    parser.add_argument('--data_path', type=str, default='dataset/weather.csv')
-    parser.add_argument('--data', type=str, default='custom')
-    parser.add_argument('--freq', type=str, default="h")
-    parser.add_argument('--target', type=str, default='OT')
-    parser.add_argument('--embed', type=str, default='timeF')
-    parser.add_argument('--percent', type=int, default=10)
-    parser.add_argument('--batch_size', type=int, default=512)
-    parser.add_argument('--max_len', type=int, default=-1)
-    parser.add_argument('--seq_len', type=int, default=512)
-    parser.add_argument('--pred_len', type=int, default=96)
-    parser.add_argument('--label_len', type=int, default=48)
-    parser.add_argument('--features', type=str, default='M')
-
+    parser.add_argument('--mode', choices=["fit", "transform"], required=True)
     args = parser.parse_args()
 
     return args
@@ -113,17 +100,28 @@ def standardscale_export(data_path_buf, params_fname, output_path, root_path):
         del prompt_data
 
 
+def create_data_dir(dir_name):
+    # prompt_dir =
+    if not os.path.exists(dir_name):
+        os.mkdir(dir_name)
+
 if __name__ == "__main__":
 
-    root_path = "./prompt_bank/stat-prompt/prompt_data_split/train"
-    output_path = "./prompt_bank/stat-prompt/prompt_data_normalize_split/train"
-    root_path = "./prompt_bank/stat-prompt/prompt_data_split/val"
-    output_path = "./prompt_bank/stat-prompt/prompt_data_normalize_split/val"
-    root_path = "./prompt_bank/stat-prompt/prompt_data_split/test"
-    output_path = "./prompt_bank/stat-prompt/prompt_data_normalize_split/test"
-    normalize_param_fname = os.path.join(output_path, "normalization_params.pth.tar")
+    root_path_train = "./prompt_bank/stat-prompt/prompt_data_split/train"
+    output_path_train = "./prompt_bank/stat-prompt/prompt_data_normalize_split/train"
+    root_path_val = "./prompt_bank/stat-prompt/prompt_data_split/val"
+    output_path_val = "./prompt_bank/stat-prompt/prompt_data_normalize_split/val"
+    root_path_test = "./prompt_bank/stat-prompt/prompt_data_split/test"
+    output_path_test = "./prompt_bank/stat-prompt/prompt_data_normalize_split/test"
+    # normalize_param_fname = os.path.join(output_path, "normalization_params.pth.tar")
     ds_size = 50
-    mode = "transform" # "fit" #
+    mode = get_args().mode # "transform" # "fit" #
+
+    data_path_buf = {
+        "train": {"root_path": root_path_train, "output_path": output_path_train, "normalize_param_fname": os.path.join(output_path_train, "normalization_params.pth.tar")},
+        "val": {"root_path": root_path_val, "output_path": output_path_val, "normalize_param_fname": os.path.join(output_path_val, "normalization_params.pth.tar")},
+        "test": {"root_path": root_path_test, "output_path": output_path_test, "normalize_param_fname": os.path.join(output_path_test, "normalization_params.pth.tar")},
+    }
 
     # data_path_buf = data_paths(root_path)
     # print(data_path_buf)
@@ -137,32 +135,39 @@ if __name__ == "__main__":
         "weather",
     ]
 
+    for split_name, data_path in data_path_buf.items():
 
-    dataset_fullname = [os.path.join(root_path, name) for name in dataset_name]
-    data_path_buf = []
-    if mode == "fit":
+        root_path = data_path_buf[split_name]["root_path"]
+        output_path = data_path_buf[split_name]["output_path"]
+        normalize_param_fname = data_path_buf[split_name]["normalize_param_fname"]
 
-        for dataset_dir in dataset_fullname:
-            paths = os.listdir(dataset_dir)
-            new_dataset = [os.path.join(dataset_dir, path) for path in paths]
-            sample_idx = np.random.permutation(len(new_dataset))[:ds_size].astype(np.int64)
+        create_data_dir(output_path)
+
+        dataset_fullname = [os.path.join(root_path, name) for name in dataset_name]
+        data_path_buf = []
+        if mode == "fit":
+
+            for dataset_dir in dataset_fullname:
+                paths = os.listdir(dataset_dir)
+                new_dataset = [os.path.join(dataset_dir, path) for path in paths]
+                sample_idx = np.random.permutation(len(new_dataset))[:ds_size].astype(np.int64)
+                # ipdb.set_trace()
+                new_dataset = np.array(new_dataset)[sample_idx].tolist()
+                data_path_buf.extend(new_dataset)
+
+        else:
+            for dataset_dir in dataset_fullname:
+                paths = os.listdir(dataset_dir)
+                new_dataset = [os.path.join(dataset_dir, path) for path in paths]
+                data_path_buf.extend(new_dataset)
+
+
+        if mode == "fit":
+
+            mean_std_export_ds(data_path_buf, normalize_param_fname)
+        else:
             # ipdb.set_trace()
-            new_dataset = np.array(new_dataset)[sample_idx].tolist()
-            data_path_buf.extend(new_dataset)
-
-    else:
-        for dataset_dir in dataset_fullname:
-            paths = os.listdir(dataset_dir)
-            new_dataset = [os.path.join(dataset_dir, path) for path in paths]
-            data_path_buf.extend(new_dataset)
-
-
-    if mode == "fit":
-
-        mean_std_export_ds(data_path_buf, normalize_param_fname)
-    else:
-        # ipdb.set_trace()
-        standardscale_export(data_path_buf, normalize_param_fname, output_path, root_path)
+            standardscale_export(data_path_buf, normalize_param_fname, output_path, root_path)
 
 
 

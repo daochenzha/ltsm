@@ -183,6 +183,7 @@ if __name__ == "__main__":
         data_path_buf.extend(paths)
 
     print(data_path_buf)
+    create_data_dir(output_path)
     # ipdb.set_trace()
 
     for path_idx, path in enumerate(data_path_buf):
