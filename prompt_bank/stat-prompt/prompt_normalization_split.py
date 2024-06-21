@@ -115,12 +115,12 @@ def standardscale_export(data_path_buf, params_fname, output_path, root_path):
 
 if __name__ == "__main__":
 
-    root_path = "./prompt_bank/prompt_data_split/train"
-    output_path = "./prompt_bank/prompt_data_normalize_split/train"
-    root_path = "./prompt_bank/prompt_data_split/val"
-    output_path = "./prompt_bank/prompt_data_normalize_split/val"
-    root_path = "./prompt_bank/prompt_data_split/test"
-    output_path = "./prompt_bank/prompt_data_normalize_split/test"
+    root_path = "./prompt_bank/stat-prompt/prompt_data_split/train"
+    output_path = "./prompt_bank/stat-prompt/prompt_data_normalize_split/train"
+    root_path = "./prompt_bank/stat-prompt/prompt_data_split/val"
+    output_path = "./prompt_bank/stat-prompt/prompt_data_normalize_split/val"
+    root_path = "./prompt_bank/stat-prompt/prompt_data_split/test"
+    output_path = "./prompt_bank/stat-prompt/prompt_data_normalize_split/test"
     normalize_param_fname = os.path.join(output_path, "normalization_params.pth.tar")
     ds_size = 50
     mode = "transform" # "fit" #

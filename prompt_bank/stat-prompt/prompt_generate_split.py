@@ -163,8 +163,8 @@ def create_data_dir(dir_name):
 
 if __name__ == "__main__":
 
-    root_path = "../datasets/"
-    output_path = "./prompt_bank/prompt_data_split/"
+    root_path = "../../datasets/"
+    output_path = "./prompt_bank/stat-prompt/prompt_data_split/"
 
 
     dataset_name = [
