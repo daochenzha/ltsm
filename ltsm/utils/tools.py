@@ -12,7 +12,6 @@ from ltsm.utils.metrics import metric
 plt.switch_backend('agg')
 
 
-
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
     __getattr__ = dict.get
@@ -60,7 +59,8 @@ def convert_tsf_to_dataframe(
     found_data_tag = False
     found_data_section = False
     started_reading_data_section = False
-
+  
+    print(full_file_path_and_name)
     with open(full_file_path_and_name, "r", encoding="cp1252") as file:
         for line in file:
             # Strip white space from start/end of line
@@ -121,7 +121,8 @@ def convert_tsf_to_dataframe(
                         full_info = line.split(":")
 
                         if len(full_info) != (len(col_names) + 1):
-                            raise Exception("Missing attributes/values in series.")
+                            continue
+                            #raise Exception("Missing attributes/values in series.")
 
                         series = full_info[len(full_info) - 1]
                         series = series.split(",")
@@ -179,6 +180,8 @@ def convert_tsf_to_dataframe(
 
         all_data[value_column_name] = all_series
         loaded_data = pd.DataFrame(all_data)
+
+        # ipdb.set_trace()
 
         return (
             loaded_data,
