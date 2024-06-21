@@ -36,12 +36,7 @@ class LTSM(PreTrainedModel):
         if configs.pretrain:
             print("Loading the pretraining weight.")
             self.llm_config = AutoConfig.from_pretrained(configs.model_name_or_path)
-            self.llm = AutoModel.from_pretrained(configs.model_name_or_path,
-                                                    output_attentions=True,
-                                                    output_hidden_states=True,
-                                                    torch_dtype=torch.bfloat16,
-                                                    attn_implementation="flash_attention_2",
-                                                    cache_dir="/scratch")  # loads a pretrained GPT-2 base model
+            self.llm = AutoModel.from_pretrained(configs.model_name_or_path)  # loads a pretrained GPT-2 base model
         else:
             raise NotImplementedError("You must load the pretraining weight.")
 
@@ -70,11 +65,12 @@ class LTSM(PreTrainedModel):
         x = x.unfold(dimension=-1, size=self.patch_size, step=self.stride)
         x = rearrange(x, 'b m n p -> (b m) n p')
         outputs = self.in_layer(x).to(dtype=torch.bfloat16)
-        if self.is_gpt:
-            outputs = self.llm(inputs_embeds=outputs).last_hidden_state
+        # import ipdb; ipdb.set_trace()
+        outputs = self.llm(inputs_embeds=outputs).last_hidden_state
 
 
         outputs = outputs.to(dtype=x.dtype)
+        
         outputs = self.out_layer(outputs.reshape(B*M, -1))
         outputs = rearrange(outputs, '(b m) l -> b l m', b=B)
 
@@ -131,13 +127,8 @@ class LTSM_WordPrompt(PreTrainedModel):
         if configs.pretrain:
             print("Loading the pretraining weight.")
             self.llm_config = AutoConfig.from_pretrained(configs.model_name_or_path)
-            self.llm_model = AutoModel.from_pretrained(configs.model_name_or_path,
-                                                    output_attentions=True,
-                                                    output_hidden_states=True,
-                                                    torch_dtype=torch.bfloat16,
-                                                    attn_implementation="flash_attention_2",
-                                                    cache_dir="/scratch")  # loads a pretrained GPT-2 base model
-            self.tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+            self.llm_model = AutoModel.from_pretrained(configs.model_name_or_path)  # loads a pretrained GPT-2 base model
+            self.tokenizer = AutoTokenizer.from_pretrained(configs.model_name_or_path)
         else:
             raise NotImplementedError("You must load the pretraining weight.")
 
@@ -177,7 +168,18 @@ class LTSM_WordPrompt(PreTrainedModel):
         self.normalize_layers = Normalize(configs.enc_in, affine=False)
 
     
-    
+    def model_prune(self, configs):
+
+        if type(self.llm_model) == GPT2Model:
+            self.llm_model.h = self.llm_model.h[:configs.gpt_layers]
+
+        elif type(self.llm_model) == LlamaModel or type(self.llm_model) == GemmaModel:
+            self.llm_model.layers = self.llm_model.layers[:configs.gpt_layers]
+
+        else:
+            raise NotImplementedError(f"No implementation for {self.llm_model}.")
+        
+        
     def calcute_lags(self, x_enc):
         q_fft = torch.fft.rfft(x_enc.permute(0, 2, 1).contiguous(), dim=-1)
         k_fft = torch.fft.rfft(x_enc.permute(0, 2, 1).contiguous(), dim=-1)
@@ -266,26 +268,30 @@ class LTSM_Tokenizer(PreTrainedModel):
         if configs.pretrain:
             print("Loading the pretraining weight.")
             self.llm_config = AutoConfig.from_pretrained(configs.model_name_or_path)
-            self.llm_model = AutoModel.from_pretrained(configs.model_name_or_path,
-                                                    output_attentions=True,
-                                                    output_hidden_states=True,
-                                                    torch_dtype=self.d_type,
-                                                    attn_implementation="flash_attention_2",
-                                                    cache_dir="/scratch")  # loads a pretrained GPT-2 base model
-            self.tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+            self.llm_model = AutoModel.from_pretrained(configs.model_name_or_path)  # loads a pretrained GPT-2 base model
         else:
             raise NotImplementedError("You must load the pretraining weight.")
 
         self.model_prune(configs)
         print("gpt2 = {}".format(self.llm_model))
             
+    def model_prune(self, configs):
 
+        if type(self.llm_model) == GPT2Model:
+            self.llm_model.h = self.llm_model.h[:configs.gpt_layers]
+
+        elif type(self.llm_model) == LlamaModel or type(self.llm_model) == GemmaModel:
+            self.llm_model.layers = self.llm_model.layers[:configs.gpt_layers]
+
+        else:
+            raise NotImplementedError(f"No implementation for {self.llm_model}.")
 
     def forward(self, x, iters=None):
         # ipdb.set_trace()
         x = x.unsqueeze(-1)
 
         x = x.int()
+        # import ipdb; ipdb.set_trace()
         outputs = self.llm_model(input_ids = x).last_hidden_state
         outputs = outputs[:, -self.pred_len:, :]
 

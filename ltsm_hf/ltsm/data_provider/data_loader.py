@@ -14,6 +14,32 @@ from ltsm.utils.tools import convert_tsf_to_dataframe
 
 warnings.filterwarnings('ignore')
 
+class HF_Dataset(Dataset):
+    def __init__(self, dataset):
+        super().__init__()
+        self.dataset = dataset
+
+    def __read_data__(self):
+        return self.dataset.__read_data__()
+
+    def __len__(self):
+        return self.dataset.__len__()
+
+    def inverse_transform(self, data):
+        return self.dataset.inverse_transform(data)
+
+    def add_data(self, df):
+        return self.dataset.add_data(df)
+
+    def __getitem__(self, index):
+
+        seq_x, seq_y = self.dataset.__getitem__(index)
+
+        return {
+            "input_data": seq_x,
+            "labels": seq_y
+        }
+
 class Dataset_ETT_hour(Dataset):
     def __init__(
         self,
