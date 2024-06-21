@@ -3,6 +3,7 @@ dataset/
 TSForecasting/
 *.swp
 output/
+.idea/
 
 *.pub
 
