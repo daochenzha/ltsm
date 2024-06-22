@@ -26,7 +26,7 @@ OUTPUT_PATH="output/ltsmt_new_csv_large_lr${lr}_loraFalse_down${downsample_rate}
 lr=1e-3
 
 
-for pred_len in 96 192 336 720
+for pred_len in 96 192 336 720  
 do
 
     CUDA_VISIBLE_DEVICES=3 python3 main_ltsm.py \

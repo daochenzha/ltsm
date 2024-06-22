@@ -4,7 +4,7 @@ import torch.nn as nn
 from einops import rearrange
 
 from transformers.modeling_utils import PreTrainedModel
-from transformers import AutoModel, AutoConfig, AutoTokenizer, GPT2Model, LlamaModel, GemmaModel
+from transformers import AutoModel, AutoConfig, AutoTokenizer
 
 class LTSM(PreTrainedModel):    
     def __init__(self, configs):
@@ -34,13 +34,12 @@ class LTSM(PreTrainedModel):
         self.cnt = 0
 
     def model_prune(self, configs):
-
-        if type(self.llm) == GPT2Model:
+        if "gpt2" in configs.model_name_or_path:
             self.llm.h = self.llm.h[:configs.gpt_layers]
-        elif type(self.llm) == LlamaModel or type(self.llm) == GemmaModel:
+        elif "phi" in configs.model_name_or_path or "llama" in configs.model_name_or_path or "gemma" in configs.model_name_or_path:
             self.llm.layers = self.llm.layers[:configs.gpt_layers]
         else:
-            raise NotImplementedError(f"No implementation for {self.llm}.")
+            raise NotImplementedError(f"No implementation in model prune for {self.llm}.")
 
     def forward(self, x):
         B, L, M = x.shape
