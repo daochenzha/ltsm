@@ -19,15 +19,15 @@ Time series prompts are designed to capture the extensive characteristics of tim
 
 **Step 2.** Generating the time series prompts from training, validating, and testing datasets
 ````angular2html
-python prompt_generate_split.py
+python3 prompt_generate_split.py
 ````
 
 **Step 3.** Find the generated time series prompts in the './prompt_data_split' folder. Then run the following command for normalizing the prompts:
 ````angular2html
-python prompt_normalization_split.py --mode fit
+python3 prompt_normalization_split.py --mode fit
 ````
 
 **Step 4.** Run this command to export the prompts to the "./prompt_data_normalize_split" folder:
 ````angular2html
-python prompt_normalization_split.py --mode transform
+python3 prompt_normalization_split.py --mode transform
 ````
