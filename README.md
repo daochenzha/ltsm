@@ -55,7 +55,7 @@ download: https://drive.google.com/drive/folders/1hLFbz0FRxdiDCzgFYtKCOPJYSBVvwW
 ## Cite This Work
 If you find this work useful, you may cite this work:
 ```
-@article{wu2020deep,
+@article{ltsm-bundle,
   title={Understanding Different Design Choices in Training Large Time Series Models},
   author={Chuang*, Yu-Neng and Li*, Songchen and Yuan*, Jiayi and Wang*, Guanchu and Lai*, Kwei-Herng and Yu, Leisheng and Ding, Sirui and Chang, Chia-Yuan and Tan, Qiaoyu and Zha, Daochen and Hu, Xia},
   journal={arXiv preprint arXiv:2406.14045},
