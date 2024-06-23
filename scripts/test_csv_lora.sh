@@ -16,7 +16,7 @@ TEST="datasets/ETT-small/ETTh1.csv
     datasets/traffic/traffic.csv
     datasets/weather/weather.csv"
 
-PROMPT="/home/gw22/python_project/ltsm_proj/ltsm/prompt/prompt_data_normalize_csv_split"
+PROMPT="prompt_bank/prompt_data_normalize_csv_split"
 
 epoch=500
 downsample_rate=20
