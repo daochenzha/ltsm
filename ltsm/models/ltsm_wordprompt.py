@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from transformers.modeling_utils import PreTrainedModel
-from transformers import AutoModel, AutoConfig, AutoTokenizer, GPT2Model, LlamaModel, GemmaModel
+from transformers import AutoModel, AutoConfig, AutoTokenizer
 
 from .utils import Normalize, FlattenHead, ReprogrammingLayer
 from .embed import PatchEmbedding
@@ -72,12 +72,12 @@ class LTSM_WordPrompt(PreTrainedModel):
 
     
     def model_prune(self, configs):
-        if type(self.llm_model) == GPT2Model:
-            self.llm_model.h = self.llm_model.h[:configs.gpt_layers]
-        elif type(self.llm_model) == LlamaModel or type(self.llm_model) == GemmaModel:
-            self.llm_model.layers = self.llm_model.layers[:configs.gpt_layers]
+        if "gpt2" in configs.model_name_or_path:
+            self.llm.h = self.llm.h[:configs.gpt_layers]
+        elif "phi" in configs.model_name_or_path or "llama" in configs.model_name_or_path or "gemma" in configs.model_name_or_path:
+            self.llm.layers = self.llm.layers[:configs.gpt_layers]
         else:
-            raise NotImplementedError(f"No implementation for {self.llm_model}.")
+            raise NotImplementedError(f"No implementation in model prune for {self.llm}.")
         
         
     def calcute_lags(self, x_enc):

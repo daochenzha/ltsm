@@ -25,7 +25,7 @@ OUTPUT_PATH="output/ltsm_lr${lr}_loraFalse_down${downsample_rate}_freeze${freeze
 lr=1e-3
 
 
-for pred_len in 96 192 336 720
+for pred_len in 96 192 336 720  
 do
 
     CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main_ltsm.py \
