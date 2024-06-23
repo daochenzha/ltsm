@@ -32,9 +32,9 @@ class LTSM_Tokenizer(PreTrainedModel):
             raise NotImplementedError(f"No implementation in model prune for {self.llm}.")
 
     def forward(self, x):
-        x = x.unsqueeze(-1)
-        x = x.int().to(self.llm.device)
-        import ipdb; ipdb.set_trace()
+        x = x.int().unsqueeze(-1)
+        # x = x.int().to(self.llm.device)
+        # import ipdb; ipdb.set_trace()
         outputs = self.llm(input_ids = x).last_hidden_state
         outputs = outputs[:, -self.pred_len:, :]
 

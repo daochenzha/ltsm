@@ -4,6 +4,9 @@ from torch import nn
 import os
 import argparse
 import random
+import sys
+
+sys.path.append("/home/yc146/github_open_ltsm/ltsm")
 
 from ltsm.data_provider.data_factory import get_datasets,get_test_datasets
 from ltsm.data_provider.data_loader import HF_Dataset
@@ -59,8 +62,8 @@ def get_args():
     parser.add_argument('--model', type=str, default='model', help='model name, , options:[LTSM, LTSM_WordPrompt, LTSM_Tokenizer]')
     parser.add_argument('--stride', type=int, default=8, help='stride')
     parser.add_argument('--tmax', type=int, default=10, help='tmax')
-    
-    # Training Settings 
+
+    # Training Settings
     parser.add_argument('--eval', type=int, default=0, help='evaluation')
     parser.add_argument('--itr', type=int, default=1, help='experiments times')
     parser.add_argument('--output_dir', type=str, default='output/ltsm_train_lr0005/', help='output directory')
@@ -164,7 +167,7 @@ def run(args):
 
     def compute_loss(model, inputs, return_outputs=False):
         outputs = model(inputs["input_data"])
-        B, L,M,_= outputs.shape
+        B, L, M, _ = outputs.shape
         loss = nn.functional.cross_entropy(outputs.reshape(B*L,-1), inputs["labels"][:,1:].long().reshape(B*L))
         return (loss, outputs) if return_outputs else loss
 
@@ -182,7 +185,7 @@ def run(args):
         labels = labels[:,1:]
         outputs = model(input_data)
         indices = torch.max(outputs, dim=-1).indices
-        
+
         output_value = tokenizer.output_transform(indices, scale)
         label_value = tokenizer.output_transform(labels.unsqueeze(-1).long(), scale)
         loss = nn.functional.mse_loss(output_value, label_value)
@@ -210,7 +213,7 @@ def run(args):
     # Training settings
     train_dataset, eval_dataset, _ = get_datasets(args)
     train_dataset, eval_dataset= HF_Dataset(train_dataset), HF_Dataset(eval_dataset)
-    
+
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -225,7 +228,7 @@ def run(args):
     # Overload the trainer API
     if not args.eval:
         trainer.compute_loss = compute_loss
-        trainer.prediction_step = prediction_step        
+        trainer.prediction_step = prediction_step
         train_results = trainer.train()
         trainer.save_model()
         trainer.log_metrics("train", train_results.metrics)
@@ -235,7 +238,7 @@ def run(args):
     # Testing settings
     for data_path in args.test_data_path_list:
         trainer.compute_loss = compute_loss
-        trainer.prediction_step = prediction_step   
+        trainer.prediction_step = prediction_step
         args.test_data_path = data_path
         test_dataset, _ = get_test_datasets(args)
         test_dataset = HF_Dataset(test_dataset)

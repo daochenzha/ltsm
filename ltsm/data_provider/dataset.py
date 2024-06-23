@@ -155,14 +155,18 @@ class TSTokenDataset(Dataset):
         prompt= self.prompt[sequence_index]
         
         seq = self.data[sequence_index][x_begin:y_end]
+        # seq = np.concatenate((prompt, self.data[sequence_index][x_begin:y_end]))
         seq = torch.from_numpy(np.expand_dims(seq,0))
+        seq_token, _, seq_scale = self.tokenizer.input_transform(seq)
 
-        token, attn, scale = self.tokenizer.input_transform(seq)
+        # seq = np.concatenate((prompt, self.data[sequence_index][x_begin:y_end]))
+        propmt_seq = torch.from_numpy(np.expand_dims(prompt,0))
+        propmt_token, _, _ = self.tokenizer.input_transform(propmt_seq)
 
-        data_x = token[0,:336]
-        # import ipdb; ipdb.set_trace()
-        seq_x = np.concatenate((prompt, data_x), axis=0)
-        data_y = np.concatenate((scale, token[0, 336:]), axis=0)
+        seq_x = seq_token[0,:336]
+        seq_x = np.concatenate((propmt_token.squeeze(), seq_x), axis=0)
+        data_y = np.concatenate((seq_scale, seq_token[0, 336:]), axis=0)
+
         return seq_x, data_y
 
     def __len__(self):
