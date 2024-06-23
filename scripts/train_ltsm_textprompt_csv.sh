@@ -17,7 +17,7 @@ TEST="datasets/ETT-small/ETTh1.csv
     datasets/weather/weather.csv"
 
 PROMPT="prompt_bank/prompt_data_normalize_csv_split"
-epoch=1
+epoch=1000
 downsample_rate=20
 freeze=0
 OUTPUT_PATH="output/ltsm_textprompt_lr${lr}_loraFalse_down${downsample_rate}_freeze${freeze}_e${epoch}_pred${pred_len}/"
