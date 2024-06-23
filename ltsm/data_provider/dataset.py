@@ -159,13 +159,12 @@ class TSTokenDataset(Dataset):
         seq = torch.from_numpy(np.expand_dims(seq,0))
         seq_token, _, seq_scale = self.tokenizer.input_transform(seq)
 
-        # seq = np.concatenate((prompt, self.data[sequence_index][x_begin:y_end]))
         propmt_seq = torch.from_numpy(np.expand_dims(prompt,0))
         propmt_token, _, _ = self.tokenizer.input_transform(propmt_seq)
 
-        seq_x = seq_token[0,:336]
+        seq_x = seq_token[0,:self.seq_len]
         seq_x = np.concatenate((propmt_token.squeeze(), seq_x), axis=0)
-        data_y = np.concatenate((seq_scale, seq_token[0, 336:]), axis=0)
+        data_y = np.concatenate((seq_scale, seq_token[0, self.seq_len:self.seq_len+self.pred_len]), axis=0)
 
         return seq_x, data_y
 

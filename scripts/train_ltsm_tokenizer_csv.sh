@@ -25,7 +25,7 @@ OUTPUT_PATH="output/ltsm_tokenizer_lr${lr}_loraFalse_down${downsample_rate}_free
 
 for pred_len in 96
 do
-    CUDA_VISIBLE_DEVICES=0 python3 main_tokenizer.py \
+    CUDA_VISIBLE_DEVICES=0,1 python3 main_tokenizer.py \
     --model LTSM_Tokenizer \
     --model_name_or_path gpt2-medium \
     --d_ff $d_ff \
