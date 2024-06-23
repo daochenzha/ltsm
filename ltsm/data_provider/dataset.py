@@ -93,6 +93,7 @@ class TSTokenDataset(Dataset):
     def __init__(
         self, 
         data, 
+        prompt,
         seq_len,
         pred_len,
         downsample_rate=10,
@@ -102,6 +103,7 @@ class TSTokenDataset(Dataset):
         self.num_items = 0
         self.item2sequence, self.item2offset = [], []
         self.data  = data
+        self.prompt = prompt
 
         for sequence_index, sequence in enumerate(self.data):
             assert len(sequence) >= self.seq_len + self.pred_len, f"Sequence must have a length with at least seq_len + pred_len, the current length is {len(sequence)}"
@@ -143,23 +145,25 @@ class TSTokenDataset(Dataset):
                 # cur_offset += 1
                 self.num_items += 1
             
-            
-
+        
     def __getitem__(self, index):
         sequence_index = self.item2sequence[index]
         x_begin = self.item2offset[index]
         x_end = x_begin + self.seq_len
         y_begin = x_end
         y_end = y_begin + self.pred_len
-
+        prompt= self.prompt[sequence_index]
+        
         seq = self.data[sequence_index][x_begin:y_end]
         seq = torch.from_numpy(np.expand_dims(seq,0))
 
         token, attn, scale = self.tokenizer.input_transform(seq)
 
         data_x = token[0,:336]
+        # import ipdb; ipdb.set_trace()
+        seq_x = np.concatenate((prompt, data_x), axis=0)
         data_y = np.concatenate((scale, token[0, 336:]), axis=0)
-        return data_x, data_y
+        return seq_x, data_y
 
     def __len__(self):
         return self.num_items

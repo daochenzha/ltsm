@@ -267,7 +267,7 @@ def create_csv_statprompt_datasets(
 
 
     # Step 3: Create Torch datasets (samplers)
-    train_dataset = TSPromptDataset (
+    train_dataset = TSTokenDataset (
         data=train_data,
         prompt=train_prompt_data,
         seq_len=seq_len,
@@ -275,7 +275,7 @@ def create_csv_statprompt_datasets(
         downsample_rate=downsample_rate,
     )
 
-    val_dataset = TSPromptDataset (
+    val_dataset = TSTokenDataset (
         data=val_data,
         prompt=val_prompt_data,
         seq_len=seq_len,
@@ -870,7 +870,7 @@ def get_datasets(args):
                 downsample_rate=args.downsample_rate,
             )
         elif "Tokenizer" in args.model:
-            train_dataset, val_dataset, processor = create_csv_token_datasets(
+            train_dataset, val_dataset, processor = create_csv_statprompt_datasets(
                 data_path=args.data_path,
                 prompt_data_path=args.prompt_data_path,
                 data_processing=args.data_processing,

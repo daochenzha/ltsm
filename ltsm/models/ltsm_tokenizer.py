@@ -16,12 +16,12 @@ class LTSM_Tokenizer(PreTrainedModel):
         if configs.pretrain:
             print("Loading the pretraining weight.")
             self.llm_config = AutoConfig.from_pretrained(configs.model_name_or_path)
-            self.llm_model = AutoModel.from_pretrained(configs.model_name_or_path)  # loads a pretrained GPT-2 base model
+            self.llm = AutoModel.from_pretrained(configs.model_name_or_path)  # loads a pretrained GPT-2 base model
         else:
             raise NotImplementedError("You must load the pretraining weight.")
 
         self.model_prune(configs)
-        print("gpt2 = {}".format(self.llm_model))
+        print("gpt2 = {}".format(self.llm))
             
     def model_prune(self, configs):
         if "gpt2" in configs.model_name_or_path:
@@ -33,9 +33,9 @@ class LTSM_Tokenizer(PreTrainedModel):
 
     def forward(self, x):
         x = x.unsqueeze(-1)
-        x = x.int()
-        
-        outputs = self.llm_model(input_ids = x).last_hidden_state
+        x = x.int().to(self.llm.device)
+        import ipdb; ipdb.set_trace()
+        outputs = self.llm(input_ids = x).last_hidden_state
         outputs = outputs[:, -self.pred_len:, :]
 
         return outputs
