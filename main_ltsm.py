@@ -6,7 +6,7 @@ import argparse
 import random
 import ipdb
 
-from ltsm.data_provider.data_factory import get_data_loaders, get_datasets
+from ltsm.data_provider.data_factory import get_data_loaders, get_datasets,get_test_datasets
 from ltsm.data_provider.data_loader import HF_Dataset
 from ltsm.models import get_model, LTSMConfig
 from peft import get_peft_config, get_peft_model, LoraConfig
@@ -30,7 +30,6 @@ def get_args():
 
     # Data Settings
     parser.add_argument('--data_path', nargs='+', default='dataset/weather.csv', help='data files')
-    parser.add_argument('--test_data_path', type=str, default='./dataset/weather.csv', help='test data file')
     parser.add_argument('--test_data_path_list', nargs='+', required=True, help='test data file')
     parser.add_argument('--prompt_data_path', type=str, default='./weather.csv', help='prompt data file')
     parser.add_argument('--data_processing', type=str, default="standard_scaler", help='data processing method')
@@ -159,12 +158,8 @@ def run(args):
     @torch.no_grad()
     def prediction_step(model, inputs, prediction_loss_only=False, ignore_keys=None):
         # CSV
-        input_data = inputs["input_data"].to(model.device)
-        labels = inputs["labels"].to(model.device)
-        
-        # monash
-        # input_data = inputs["input_data"].to(model.device)
-        # labels = inputs["labels"].to(model.device)
+        input_data = inputs["input_data"].to(model.module.device)
+        labels = inputs["labels"].to(model.module.device)
         outputs = model(input_data)
         loss = nn.functional.mse_loss(outputs, labels)
         return (loss, outputs, labels)
@@ -187,11 +182,10 @@ def run(args):
         push_to_hub=False,
         load_best_model_at_end=True,
     )
-
-    # Data settings
-    train_dataset, eval_dataset, test_dataset, _ = get_datasets(args)
-    train_dataset, eval_dataset, test_dataset = HF_Dataset(train_dataset), HF_Dataset(eval_dataset), HF_Dataset(test_dataset)
-
+    
+    train_dataset, eval_dataset, _ = get_datasets(args)
+    train_dataset, eval_dataset= HF_Dataset(train_dataset), HF_Dataset(eval_dataset)
+    
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -203,7 +197,7 @@ def run(args):
         optimizers=(model_optim, lr_scheduler),
     )
 
-    # Training loop
+    # Overload the trainer API
     if not args.eval:
         trainer.compute_loss = compute_loss
         trainer.prediction_step = prediction_step        
@@ -218,7 +212,7 @@ def run(args):
         trainer.compute_loss = compute_loss
         trainer.prediction_step = prediction_step   
         args.test_data_path = data_path
-        _, _, test_dataset, _ = get_datasets(args)
+        test_dataset, _ = get_test_datasets(args)
         test_dataset = HF_Dataset(test_dataset)
 
         metrics = trainer.evaluate(test_dataset)

@@ -1,8 +1,4 @@
-import numpy as np
 import torch
-import torch.nn as nn
-from torch import optim
-from einops import rearrange
 
 from transformers.modeling_utils import PreTrainedModel
 from transformers import AutoModel, AutoConfig, GPT2Model, LlamaModel, GemmaModel

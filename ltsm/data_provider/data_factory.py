@@ -11,7 +11,6 @@ import ipdb
 
 def create_csv_datasets(
     data_path,
-    test_data_path,
     prompt_data_path,
     data_processing,
     seq_len,
@@ -109,7 +108,20 @@ def create_csv_datasets(
         downsample_rate=downsample_rate,
         uniform_sampling=False
     )
-    
+
+    return train_dataset, val_dataset, processor
+
+def create_csv_test_datasets(
+    test_data_path,
+    prompt_data_path,
+    data_processing,
+    seq_len,
+    pred_len,
+    train_ratio,
+    val_ratio,
+    scale_on_train=False,
+    downsample_rate=10,
+):
     # Load Testing data
     test_train_ratio, test_val_ratio = train_ratio, val_ratio
 
@@ -163,21 +175,18 @@ def create_csv_datasets(
             )
             test_prompt_data.append(instance_prompt)
     test_dataset = TSPromptDataset (
-        data=test_data, # add 1 dimension to match the dimension of training data in dataloader
+        data=test_data, 
         prompt=test_prompt_data,
         seq_len=seq_len,
         pred_len=pred_len,
         downsample_rate=1,
         uniform_sampling=False
     )
-
-    return train_dataset, val_dataset,test_dataset, processor
-
+    return test_dataset, processor
 
 
 def create_csv_statprompt_datasets(
     data_path,
-    test_data_path,
     prompt_data_path,
     data_processing,
     seq_len,
@@ -274,7 +283,21 @@ def create_csv_statprompt_datasets(
         downsample_rate=downsample_rate,
     )
     
-    # Load Testing data
+
+    return train_dataset, val_dataset, processor
+
+def create_csv_statprompt_test_datasets(
+    test_data_path,
+    prompt_data_path,
+    data_processing,
+    seq_len,
+    pred_len,
+    train_ratio,
+    val_ratio,
+    scale_on_train=False,
+    downsample_rate=10,
+):
+        # Load Testing data
     test_train_ratio, test_val_ratio = train_ratio, val_ratio
 
     if 'ETTh1' in test_data_path or 'ETTh2' in test_data_path:
@@ -328,15 +351,13 @@ def create_csv_statprompt_datasets(
             test_prompt_data.append(instance_prompt)
             
     test_dataset = TSPromptDataset (
-        data=test_data, # add 1 dimension to match the dimension of training data in dataloader
+        data=test_data,
         prompt=test_prompt_data,
         seq_len=seq_len,
         pred_len=pred_len,
         downsample_rate=1,
     )
-
-    return train_dataset, val_dataset,test_dataset, processor
-
+    return test_dataset, processor
 
 data2index = {
     "ETTh1": 0, 
@@ -352,7 +373,6 @@ data2index = {
 
 def create_csv_textprompt_datasets(
     data_path,
-    test_data_path,
     prompt_data_path,
     data_processing,
     seq_len,
@@ -373,7 +393,7 @@ def create_csv_textprompt_datasets(
         sub_val_ratio = val_ratio
         
         df_data = pd.read_csv(sub_data_path)
-        cols = df_data.columns[1:] 
+        cols = df_data.columns[1:]
         raw_data = df_data[cols].T.values
         
         # keep the ETT data setting same with PatchTST (dataset length and train/val/test ratio)
@@ -439,8 +459,23 @@ def create_csv_textprompt_datasets(
         pred_len=pred_len,
         downsample_rate=downsample_rate,
     )
-    
+ 
+
+    return train_dataset, val_dataset, processor
+
+def create_csv_textprompt_test_datasets(
+    test_data_path,
+    prompt_data_path,
+    data_processing,
+    seq_len,
+    pred_len,
+    train_ratio,
+    val_ratio,
+    scale_on_train=False,
+    downsample_rate=10,
+):
     # Load Testing data
+    test_prompt_data = []
     test_train_ratio, test_val_ratio = train_ratio, val_ratio
 
     if 'ETTh1' in test_data_path or 'ETTh2' in test_data_path:
@@ -494,12 +529,10 @@ def create_csv_textprompt_datasets(
         pred_len=pred_len,
         downsample_rate=1,
     )
-
-    return train_dataset, val_dataset,test_dataset, processor
+    return test_dataset, processor
 
 def create_csv_token_datasets(
     data_path,
-    test_data_path,
     prompt_data_path,
     data_processing,
     seq_len,
@@ -577,7 +610,21 @@ def create_csv_token_datasets(
         downsample_rate=downsample_rate,
     )
     
-    # Load Testing data
+
+    return train_dataset, val_dataset, processor
+
+def create_csv_token_test_datasets(
+    test_data_path,
+    prompt_data_path,
+    data_processing,
+    seq_len,
+    pred_len,
+    train_ratio,
+    val_ratio,
+    scale_on_train=False,
+    downsample_rate=10,
+):
+        # Load Testing data
     test_train_ratio, test_val_ratio = train_ratio, val_ratio
 
     if 'ETTh1' in test_data_path or 'ETTh2' in test_data_path:
@@ -626,12 +673,11 @@ def create_csv_token_datasets(
         pred_len=pred_len,
         downsample_rate=1,
     )
+    return test_dataset, processor
 
-    return train_dataset, val_dataset,test_dataset, processor
 
 def create_datasets(
     data_path,
-    test_data_path,
     prompt_data_path,
     data_processing,
     seq_len,
@@ -642,10 +688,6 @@ def create_datasets(
     scale_on_train=False,
     downsample_rate=10,
 ):
-    # Here, we directly load the training, validation, and testing splits
-    # to aviod loading the same dataset 3 times
-
-
     # Load Training data and validation data
     train_data, val_data, test_data, prompt_data = [], [], [], []
 
@@ -658,15 +700,6 @@ def create_datasets(
         
         # Step 0: Read data, the output is a list of 1-d time-series
         raw_data = reader_dict[dir_name](sub_data_path).fetch()
-        # ipdb.set_trace()
-        """
-        print(len(raw_data))
-        print(raw_data[0])
-        print(raw_data[0].shape)
-        for a in raw_data:
-            print(len(a))
-        exit()
-        """
 
         # Step 1: Get train, val, and test splits
         # For now, we use SplitterByTimestamp only
@@ -707,10 +740,6 @@ def create_datasets(
         val_data.extend(sub_val_data)
         test_data.extend(sub_test_data)
         
-
-
-        # ipdb.set_trace()
-
     # Step 3: Create Torch datasets (samplers)
     train_dataset = TSPromptDataset(
         data=train_data,
@@ -727,8 +756,22 @@ def create_datasets(
         pred_len=pred_len,
         downsample_rate=54,
     )
-    
-    # Testing data
+
+    return train_dataset, val_dataset, processor
+
+def create_test_datasets(
+    test_data_path,
+    prompt_data_path,
+    data_processing,
+    seq_len,
+    pred_len,
+    prompt_len,
+    train_ratio,
+    val_ratio,
+    scale_on_train=False,
+    downsample_rate=10,
+):
+        # Testing data
     test_ratio = 1.0 - train_ratio - val_ratio
     print(f"Testing Loading {test_data_path}, train {train_ratio:.2f}, val {val_ratio:.2f}, test {test_ratio:.2f}")
 
@@ -778,8 +821,7 @@ def create_datasets(
         downsample_rate=1,
         uniform_sampling=False
     )
-
-    return train_dataset, val_dataset, test_dataset, processor
+    return test_dataset, processor
 
 def _get_prompt(prompt_folder_path, data_name, idx_file_name):
     prompt_name = data_name.split("/")[-1]
@@ -817,8 +859,60 @@ def get_datasets(args):
     # use CSV datasets
     if file_ext == ".csv":
         if "WordPrompt" in args.model:
-            train_dataset, val_dataset, test_dataset, processor = create_csv_textprompt_datasets(
+            train_dataset, val_dataset, processor = create_csv_textprompt_datasets(
                 data_path=args.data_path,
+                prompt_data_path=args.prompt_data_path,
+                data_processing=args.data_processing,
+                seq_len=args.seq_len,
+                pred_len=args.pred_len,
+                train_ratio=args.train_ratio,
+                val_ratio=args.val_ratio,
+                downsample_rate=args.downsample_rate,
+            )
+        elif "Tokenizer" in args.model:
+            train_dataset, val_dataset, processor = create_csv_token_datasets(
+                data_path=args.data_path,
+                prompt_data_path=args.prompt_data_path,
+                data_processing=args.data_processing,
+                seq_len=args.seq_len,
+                pred_len=args.pred_len,
+                train_ratio=args.train_ratio,
+                val_ratio=args.val_ratio,
+            )
+        else:
+            train_dataset, val_dataset, processor = create_csv_statprompt_datasets(
+                data_path=args.data_path,
+                prompt_data_path=args.prompt_data_path,
+                data_processing=args.data_processing,
+                seq_len=args.seq_len,
+                pred_len=args.pred_len,
+                train_ratio=args.train_ratio,
+                val_ratio=args.val_ratio,
+                downsample_rate=args.downsample_rate,
+            )
+    else:
+        # use Monash datasets
+        train_dataset, val_dataset, processor = create_datasets(
+            data_path=args.data_path,
+            prompt_data_path=args.prompt_data_path,
+            data_processing=args.data_processing,
+            seq_len=args.seq_len,
+            pred_len=args.pred_len,
+            train_ratio=args.train_ratio,
+            val_ratio=args.val_ratio,
+            downsample_rate=args.downsample_rate,
+        )
+    # print(f"Data loaded {args.test_data_path}, train size {len(train_dataset)}, val size {len(val_dataset)}, test size {len(test_dataset)} ")
+    return train_dataset, val_dataset,processor
+    
+def get_test_datasets(args):
+    # Get datasets extension
+    file_ext = os.path.splitext(args.data_path[0])[-1]
+    
+    # use CSV datasets
+    if file_ext == ".csv":
+        if "WordPrompt" in args.model:
+            test_dataset, processor = create_csv_textprompt_test_datasets(
                 test_data_path=args.test_data_path,
                 prompt_data_path=args.prompt_data_path,
                 data_processing=args.data_processing,
@@ -829,8 +923,7 @@ def get_datasets(args):
                 downsample_rate=args.downsample_rate,
             )
         elif "Tokenizer" in args.model:
-            train_dataset, val_dataset, test_dataset, processor = create_csv_token_datasets(
-                data_path=args.data_path,
+            test_dataset, processor = create_csv_token_test_datasets(
                 test_data_path=args.test_data_path,
                 prompt_data_path=args.prompt_data_path,
                 data_processing=args.data_processing,
@@ -840,8 +933,7 @@ def get_datasets(args):
                 val_ratio=args.val_ratio,
             )
         else:
-            train_dataset, val_dataset, test_dataset, processor = create_csv_statprompt_datasets(
-                data_path=args.data_path,
+            test_dataset, processor = create_csv_statprompt_test_datasets(
                 test_data_path=args.test_data_path,
                 prompt_data_path=args.prompt_data_path,
                 data_processing=args.data_processing,
@@ -853,8 +945,7 @@ def get_datasets(args):
             )
     else:
         # use Monash datasets
-        train_dataset, val_dataset, test_dataset, processor = create_datasets(
-            data_path=args.data_path,
+        test_dataset, processor = create_datasets(
             test_data_path=args.test_data_path,
             prompt_data_path=args.prompt_data_path,
             data_processing=args.data_processing,
@@ -864,9 +955,9 @@ def get_datasets(args):
             val_ratio=args.val_ratio,
             downsample_rate=args.downsample_rate,
         )
-    print(f"Data loaded {args.test_data_path}, train size {len(train_dataset)}, val size {len(val_dataset)}, test size {len(test_dataset)} ")
-    return train_dataset, val_dataset,test_dataset, processor
-    
+    print(f"Data loaded {args.test_data_path}, test size {len(test_dataset)} ")
+    return test_dataset, processor    
+
 def get_data_loaders(args):
 
     # Create datasets

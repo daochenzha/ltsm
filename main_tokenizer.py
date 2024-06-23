@@ -5,10 +5,10 @@ import os
 import argparse
 import random
 
-from .ltsm.data_provider.data_factory import get_datasets
-from .ltsm.data_provider.data_loader import HF_Dataset
-from .ltsm.data_provider.data_processing.tokenizer_processor import TokenizerConfig
-from .ltsm.models.utils import get_model, LTSMConfig
+from ltsm.data_provider.data_factory import get_datasets,get_test_datasets
+from ltsm.data_provider.data_loader import HF_Dataset
+from ltsm.data_provider.data_processing.tokenizer_processor import TokenizerConfig
+from ltsm.models import get_model, LTSMConfig
 from peft import get_peft_model, LoraConfig
 
 from transformers import (
@@ -176,8 +176,8 @@ def run(args):
 
     @torch.no_grad()
     def prediction_step(model, inputs, prediction_loss_only=False, ignore_keys=None):
-        input_data = inputs["input_data"].to(model.device)
-        labels = inputs["labels"].to(model.device)
+        input_data = inputs["input_data"].to(model.module.device)
+        labels = inputs["labels"].to(model.module.device)
         scale = labels[:,0]
         labels = labels[:,1:]
         outputs = model(input_data)
@@ -208,8 +208,8 @@ def run(args):
     )
 
     # Training settings
-    train_dataset, eval_dataset, test_dataset, _ = get_datasets(args)
-    train_dataset, eval_dataset, test_dataset = HF_Dataset(train_dataset), HF_Dataset(eval_dataset), HF_Dataset(test_dataset)
+    train_dataset, eval_dataset, _ = get_datasets(args)
+    train_dataset, eval_dataset= HF_Dataset(train_dataset), HF_Dataset(eval_dataset)
     
     trainer = Trainer(
         model=model,
@@ -237,7 +237,7 @@ def run(args):
         trainer.compute_loss = compute_loss
         trainer.prediction_step = prediction_step   
         args.test_data_path = data_path
-        _, _, test_dataset, _ = get_datasets(args)
+        test_dataset, _ = get_test_datasets(args)
         test_dataset = HF_Dataset(test_dataset)
 
         metrics = trainer.evaluate(test_dataset)
