@@ -267,7 +267,7 @@ def create_csv_statprompt_datasets(
 
 
     # Step 3: Create Torch datasets (samplers)
-    train_dataset = TSTokenDataset (
+    train_dataset = TSPromptDataset (
         data=train_data,
         prompt=train_prompt_data,
         seq_len=seq_len,
@@ -275,7 +275,7 @@ def create_csv_statprompt_datasets(
         downsample_rate=downsample_rate,
     )
 
-    val_dataset = TSTokenDataset (
+    val_dataset = TSPromptDataset (
         data=val_data,
         prompt=val_prompt_data,
         seq_len=seq_len,
@@ -590,6 +590,23 @@ def create_csv_token_datasets(
 
         # Step 2.5 Load prompt for each instance
         # Train Prompt
+        train_prompt_data_path = prompt_data_path + '/train'
+        for train_intance_idx in buff:
+            instance_prompt =_get_csv_prompt(
+                train_prompt_data_path,  
+                sub_data_path,
+                train_intance_idx
+            )
+            train_prompt_data.append(instance_prompt)
+        
+        val_prompt_data_path = prompt_data_path + '/val'
+        for val_intance_idx in buff:
+            instance_prompt = _get_csv_prompt(
+                val_prompt_data_path,  
+                sub_data_path,
+                val_intance_idx
+            )
+            val_prompt_data.append(instance_prompt)
         
         train_data.extend(sub_train_data)
         val_data.extend(sub_val_data)
@@ -598,13 +615,15 @@ def create_csv_token_datasets(
     # Step 3: Create Torch datasets (samplers)
     train_dataset = TSTokenDataset (
         data=train_data,
+        prompt=train_prompt_data,
         seq_len=seq_len,
         pred_len=pred_len,
         downsample_rate=downsample_rate,
     )
 
-    val_dataset = TSTokenDataset(
+    val_dataset = TSTokenDataset (
         data=val_data,
+        prompt=val_prompt_data,
         seq_len=seq_len,
         pred_len=pred_len,
         downsample_rate=downsample_rate,
@@ -666,15 +685,25 @@ def create_csv_token_test_datasets(
         test_data,
         fit_train_only=scale_on_train,
     )
+
+    test_prompt_data = []
+    test_prompt_data_path = prompt_data_path + "/test"
+    for test_intance_idx in buff:
+            instance_prompt = _get_csv_prompt(
+                test_prompt_data_path,  
+                test_data_path,
+                test_intance_idx
+            )
+            test_prompt_data.append(instance_prompt)
             
     test_dataset = TSTokenDataset (
-        data=test_data, # add 1 dimension to match the dimension of training data in dataloader
+        data=test_data,
+        prompt=test_prompt_data,
         seq_len=seq_len,
         pred_len=pred_len,
         downsample_rate=1,
     )
     return test_dataset, processor
-
 
 def create_datasets(
     data_path,
@@ -870,7 +899,7 @@ def get_datasets(args):
                 downsample_rate=args.downsample_rate,
             )
         elif "Tokenizer" in args.model:
-            train_dataset, val_dataset, processor = create_csv_statprompt_datasets(
+            train_dataset, val_dataset, processor = create_csv_token_datasets(
                 data_path=args.data_path,
                 prompt_data_path=args.prompt_data_path,
                 data_processing=args.data_processing,

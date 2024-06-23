@@ -15,7 +15,7 @@ TEST="datasets/ETT-small/ETTh1.csv
     datasets/exchange_rate/exchange_rate.csv
     datasets/traffic/traffic.csv
     datasets/weather/weather.csv"
-PROMPT="/home/gw22/python_project/ltsm_proj/ltsm/prompt/prompt_data_normalize_csv_split"
+PROMPT="prompt_bank/prompt_data_normalize_csv_split"
 lr=1e-3
 epoch=50
 downsample_rate=20
@@ -40,5 +40,5 @@ do
     --learning_rate ${lr} \
     --downsample_rate ${downsample_rate} \
     --output_dir ${OUTPUT_PATH}\
-    --eval 0
+    --eval 1
 done
