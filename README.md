@@ -1,4 +1,16 @@
-# Large Time Series Model (LTSM)
+# Understanding Different Design Choices in Training Large Time Series Models
+<img width="700" height="290" src="./imgs/ltsm_model.png">
+
+This work investigates the transition from traditional Time Series Forecasting (TSF) to Large Time Series Models (LTSMs), leveraging universal transformer-based models. Training LTSMs on diverse time series data introduces challenges due to varying frequencies, dimensions, and patterns. We explore various design choices for LTSMs, covering pre-processing, model configurations, and dataset setups. We introduce **Time Series Prompt**, a statistical prompting strategy, and $\texttt{LTSM-bundle}$, which encapsulates the most effective design practices identified. Our empirical results show that $\texttt{LTSM-bundle}$ outperforms existing LTSMs and traditional TSF methods in zero-shot and few-shot scenarios on benchmark datasets. $\texttt{LTSM-bundle}$ is developed by [Data Lab](https://cs.rice.edu/~xh37/) at Rice University.
+
+## Resources
+:mega: We have released our paper and training code of LTSM-bundle-v1.0!
+* Paper: https://arxiv.org/abs/2406.14045
+* Poster: [https://reurl.cc/5OvprR](https://arxiv.org/abs/2406.14045)
+* Do you want to learn more about data pipeline search? Please check out our [data-centric AI survey](https://arxiv.org/abs/2303.10158) and [data-centric AI resources](https://github.com/daochenzha/data-centric-AI) !
+
+## Why LTSM-bundle?
+The LTSM-bundle package leverages the HuggingFace transformers toolkit, offering flexibility to switch between different advanced language models as the backbone. It is easy to tailor the general LTSMs to their specific time series forecasting needs by selecting the most suitable language model from a wide array of options. The flexibility enhances the adaptability of the package across different industries and data types, ensuring optimal performance in diverse scenarios.
 
 ## Installation
 ```
@@ -10,93 +22,43 @@ pip3 install -e .
 pip3 install -r requirements.txt
 ```
 
-## Quick start
-Get some example data (in datalab1 at Rice):
+## Quick Exploration on LTSM-bundle 
 
-```
-cp -r /home/dz36/ltsm/ltsm/dataset ./
-```
-
-Train model on Weather dataset:
-```
-python main.py --model_id test_run
+Training on **[Time Series Prompt]** and **[Linear Tokenization]**
+```bash
+bash scripts/train_ltsm_csv.sh
 ```
 
-## Datasets
-Let's maintain a table of the datasets. We just put datasets in our server for now without uploading to Github.
-
-[EEG (3.4GB)](https://www.physionet.org/content/eegmmidb/1.0.0/)
-
-1526 in total, length 9633
-
-`/home/jy101/ltsm/dataset/eeg_csv/` or `/home/jy101/ltsm/dataset/eeg_feather/`
-
-
-Pretrain: [ECG (33GB)](https://physionet.org/content/fecgsyndb/1.0.0/)
-
-7000 in total, length 75000
-
-`/home/jy101/ltsm/dataset/fecgsyndb_csv/` or `/home/jy101/ltsm/dataset/fecgsyndb_feather/`
-
-Fine-tune and Testing: [ECG (5GB)](https://physionet.org/content/ecg-arrhythmia/1.0.0/)
-
-45152 in total, length 5000
-
-`/home/jy101/ltsm/dataset/ecg_arrhythmia_csv/` or `/home/jy101/ltsm/dataset/ecg_arrhythmia_feather/`
-
-### Monash
-
-Dataset in 
-```
-/home/jy101/ltsm/dataset/monash_raw/
+Training on **[Text Prompt]** and **[Linear Tokenization]**
+```bash
+bash scripts/train_ltsm_csv.sh
 ```
 
-usage:
-```
---data tsf_data --data_path /home/jy101/ltsm/dataset/monash_raw/$DATASET.tsf
-```
-
-## Custum Dataset
-
-Data configuration:
-```
---data_path: path to the data folder
---data: name of the data loader (i.e. Dataset_Custom_List, Dataset_Custom_List_TS)
+Training on **[Time Series Prompt]** and **[Time Series Tokenization]**
+```bash
+bash scripts/train_ltsm_tokenizer_csv.sh
 ```
 
-Data loader:
+## Datasets and Time Series Prompts
+Download the datasets
+```bash
+cd datasets
+download: https://drive.google.com/drive/folders/1hLFbz0FRxdiDCzgFYtKCOPJYSBVvwW9P
 ```
-train_loader, val_loader, test_loader = get_data_loaders(config)
+
+Download the time sereis prompts 
+```bash
+cd prompt_bank/propmt_data_csv
+download: https://drive.google.com/drive/folders/1hLFbz0FRxdiDCzgFYtKCOPJYSBVvwW9P
 ```
 
-## Roadmap
-
-<img width="800" src="./imgs/overview.png" alt="overview" />
-
-### Stage 1
-
-We train the model on some datasets in the same domain to see whether it could work.
-
-Action items:
-*   Allen: Focus on modeling. Adapt the code to a form that is more suitable for pre-training and testing/fine-tuning on downstream time series. Note: make it flexible to be able to adapt to fine-tuning. If directly transfer does not work, we may need to try fine-tuning.
-*   Guanchu: Focus on efficency. Current task: implement and test data parallel
-*   Jiayi: Focus on data. Collect and process data into a format that can be directly loaded by the data loader. Do manual cleaning or filtering if needed.
-*   Henry: Provide guidance and trouble shooting. Identifdy the potential good data sources, share time series prerpocessing experiences, etc.
-*   Daochen: Design the whole workflow and organize the efforts.
-
-Tentative author order if we submit a paper later:
-Allen*, Guanchu*, Jiayi*, Henry*, Daochen*, [some others], Xia Hu
-
-Note:
-1. \* means equal contribution
-2. The order of first three authors are subject to change based on actual contribution.
-3. Anyone could be removed if not contributing, as suggested by Dr. Hu.
-4. [some others] are reserved for Stage 2 (no *). If Stage 1 works out, it is very likely we need more help, e.g., data.
-
-
-### Stage 2
-Train model with prompts. TBD
-
-
-## Resources
-[Power Time Series Forecasting by Pretrained LM](https://arxiv.org/pdf/2302.11939.pdf)
+## Cite This Work
+If you find this work useful, you may cite this work:
+```
+@article{ltsm-bundle,
+  title={Understanding Different Design Choices in Training Large Time Series Models},
+  author={Chuang*, Yu-Neng and Li*, Songchen and Yuan*, Jiayi and Wang*, Guanchu and Lai*, Kwei-Herng and Yu, Leisheng and Ding, Sirui and Chang, Chia-Yuan and Tan, Qiaoyu and Zha, Daochen and Hu, Xia},
+  journal={arXiv preprint arXiv:2406.14045},
+  year={2024}
+}
+```

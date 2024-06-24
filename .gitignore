@@ -2,7 +2,10 @@ checkpoints/
 dataset/
 TSForecasting/
 *.swp
+output/
+.idea/
 
+*.pub
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -133,3 +136,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+*.csv
+scratch/
+.DS_Store
+.idea/
