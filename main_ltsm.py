@@ -41,7 +41,6 @@ def get_args():
     parser.add_argument('--pred_len', type=int, default=96, help='prediction sequence length')
     parser.add_argument('--prompt_len', type=int, default=133, help='prompt sequence length')
 
-
     # Model Settings
     parser.add_argument('--lora', action="store_true", help='use lora')
     parser.add_argument('--lora_dim', type=int, default=128, help='dimension of lora')
@@ -139,7 +138,8 @@ def run(args):
             label_ids = p.label_ids
         return {
                 "mse": ((preds - label_ids) ** 2).mean().item(),
-                "mae": (np.abs(preds - label_ids)).mean().item()}
+                "mae": (np.abs(preds - label_ids)).mean().item()
+        }
 
     # Loss function
     def compute_loss(model, inputs, return_outputs=False):

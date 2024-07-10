@@ -17,7 +17,7 @@ TEST="datasets/ETT-small/ETTh1.csv
     datasets/traffic/traffic.csv
     datasets/weather/weather.csv"
 
-PROMPT="prompt_bank/prompt_data_normalize_csv_split"
+PROMPT="prompt_bank/prompt_data_normalize_split"
 
 epoch=1000
 downsample_rate=20
