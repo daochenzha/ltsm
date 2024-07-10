@@ -14,7 +14,7 @@ pip3 install -r requirements.txt
 
 ## :bookmark: Step 0: Collect Datasets and Time Series Prompts
 
-### :pushpin: You can use our prepared dataset to on-board youselves on LTSM-bundle
+### :cyclone: You can use our prepared dataset to on-board youselves on LTSM-bundle
 
 ### Download training datasets
 ```bash
@@ -36,7 +36,7 @@ check: csv_prompt.json
 
 ## :bookmark: Step 1: Customize Datasets and Time Series Prompts
 
-### :pushpin: If you prefer to build LTSM-bundle on your own dataset, please follow the 5-step instructions below:
+### :cyclone: If you prefer to build LTSM-bundle on your own dataset, please follow the 5-step instructions below:
 
 **Step 1-a.** Prepare your dataset. Make sure your local data folder like this:
 ````angular2html
@@ -69,7 +69,7 @@ vim prompt_bank/text_prompt_data_csv/csv_prompt.json
 
 ## :bookmark: Step 2: Customize your own LTSM-bundle 
 
-### :pushpin: Now, it's time to build you own LTSM-bundle!!
+### :cyclone: Now, it's time to build you own LTSM-bundle!!
 
 #### (1) Explore [Word Prompt] and [Linear Tokenization] on gpt2-medium
 ```bash
