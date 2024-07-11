@@ -91,7 +91,7 @@ python3 main_ltsm.py \
 #### (2) Explore [Time Series Prompt] and [Linear Tokenization] on gpt2-medium
 ```bash
 python3 main_ltsm.py \
-    --model LTSM_WordPrompt \
+    --model LTSM \
     --model_name_or_path gpt2-medium \
     --train_epochs 500 \
     --batch_size 10 \
