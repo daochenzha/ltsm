@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from math import sqrt
+from transformers.modeling_utils import PreTrainedModel, PretrainedConfig
 
 class Normalize(nn.Module):
     def __init__(self, num_features: int, eps=1e-5, affine=False, subtract_last=False, non_norm=False):
@@ -137,7 +138,9 @@ def get_model(config):
         if config.local_pretrain == "None":
             model = LTSM(config)
         else:
-            model = LTSM.from_pretrained(config.local_pretrain, config=config)
+            model_config = PretrainedConfig.from_pretrained(config.local_pretrain)
+            model = LTSM.from_pretrained(config.local_pretrain, model_config)
+
 
     return model
 

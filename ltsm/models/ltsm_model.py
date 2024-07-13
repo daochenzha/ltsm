@@ -2,12 +2,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 from einops import rearrange
-
-from transformers.modeling_utils import PreTrainedModel
+from .config import LTSMConfig
+from transformers.modeling_utils import PreTrainedModel, PretrainedConfig
 from transformers import AutoModel, AutoConfig, AutoTokenizer
 
 class LTSM(PreTrainedModel):    
-    def __init__(self, configs):
+    config_class = LTSMConfig
+    def __init__(self, configs, *model_args, **model_kwargs):
         super().__init__(configs)
         self.patch_size = configs.patch_size
         self.pretrain = configs.pretrain
@@ -40,7 +41,7 @@ class LTSM(PreTrainedModel):
             self.llm.layers = self.llm.layers[:configs.gpt_layers]
         else:
             raise NotImplementedError(f"No implementation in model prune for {self.llm}.")
-
+    
     def forward(self, x):
         B, L, M = x.shape
 
