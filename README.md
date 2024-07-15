@@ -7,6 +7,7 @@ This work investigates the transition from traditional Time Series Forecasting (
 :mega: We have released our paper and training code of LTSM-bundle-v1.0!
 * Paper: https://arxiv.org/abs/2406.14045
 * Blog: [Time Series Are Not That Different for LLMs](https://towardsdatascience.com/time-series-are-not-that-different-for-llms-56435dc7d2b1)
+* Tutorial: [Build your own LTSM-bundle](https://github.com/daochenzha/ltsm/tree/main/tutorial)
 * Do you want to learn more about data pipeline search? Please check out our [data-centric AI survey](https://arxiv.org/abs/2303.10158) and [data-centric AI resources](https://github.com/daochenzha/data-centric-AI) !
 
 ## Why LTSM-bundle?
