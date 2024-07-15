@@ -104,3 +104,22 @@ python3 main_ltsm.py \
     --downsample_rate 20 \
     --output_dir [Your_Output_Path] \
 ```
+
+#### (3) Finetune your dataset based on pre-trained LTSM-bundle model: [Time Series Prompt] and [Linear Tokenization] on gpt2-medium
+```bash
+python3 main_ltsm.py \
+    --model LTSM \
+    --model_name_or_path gpt2-medium \
+    --local_pretrain  LSC2204/LTSM-bundle \ # This model weight is for pred_len == 96
+    --train_epochs 500 \
+    --batch_size 10 \
+    --pred_len 96 \
+    --data_path "datasets/ETT-small/ETTh1.csv" \
+    --test_data_path_list "datasets/ETT-small/ETTh1.csv" \
+    --prompt_data_path "prompt_bank/prompt_data_normalize_split" \
+    --freeze 0 \
+    --learning_rate 1e-3 \
+    --downsample_rate 20 \
+    --output_dir [Your_Output_Path] \
+```
+
