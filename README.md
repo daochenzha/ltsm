@@ -4,7 +4,8 @@
 This work investigates the transition from traditional Time Series Forecasting (TSF) to Large Time Series Models (LTSMs), leveraging universal transformer-based models. Training LTSMs on diverse time series data introduces challenges due to varying frequencies, dimensions, and patterns. We explore various design choices for LTSMs, covering pre-processing, model configurations, and dataset setups. We introduce **Time Series Prompt**, a statistical prompting strategy, and $\texttt{LTSM-bundle}$, which encapsulates the most effective design practices identified. Our empirical results show that $\texttt{LTSM-bundle}$ outperforms existing LTSMs and traditional TSF methods in zero-shot and few-shot scenarios on benchmark datasets. $\texttt{LTSM-bundle}$ is developed by [Data Lab](https://cs.rice.edu/~xh37/) at Rice University.
 
 ## Resources
-:mega: We have released our paper and training code of LTSM-bundle-v1.0!
+:star2: Please stars our repo to follow latest updates of LTSM-bundle!!
+:mega: We have released our paper and training code of LTSM-bundle-v1.0!!
 * Paper: https://arxiv.org/abs/2406.14045
 * Blog: [Time Series Are Not That Different for LLMs](https://towardsdatascience.com/time-series-are-not-that-different-for-llms-56435dc7d2b1)
 * Tutorial: [Build your own LTSM-bundle](https://github.com/daochenzha/ltsm/tree/main/tutorial)
