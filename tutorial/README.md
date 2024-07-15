@@ -71,7 +71,7 @@ vim prompt_bank/text_prompt_data_csv/csv_prompt.json
 
 ### :cyclone: Now, it's time to build you own LTSM-bundle!!
 
-#### (1) Explore [Word Prompt] and [Linear Tokenization] on gpt2-medium
+#### Option-(1) Explore [Word Prompt] and [Linear Tokenization] on gpt2-medium
 ```bash
 python3 main_ltsm.py \
     --model LTSM_WordPrompt \
@@ -88,7 +88,7 @@ python3 main_ltsm.py \
     --output_dir [Your_Output_Path] \
 ```
 
-#### (2) Explore [Time Series Prompt] and [Linear Tokenization] on gpt2-medium
+#### Option-(2) Explore [Time Series Prompt] and [Linear Tokenization] on gpt2-medium
 ```bash
 python3 main_ltsm.py \
     --model LTSM \
@@ -105,7 +105,7 @@ python3 main_ltsm.py \
     --output_dir [Your_Output_Path] \
 ```
 
-#### (3) Finetune your dataset based on pre-trained LTSM-bundle model: [Time Series Prompt] and [Linear Tokenization] on gpt2-medium
+#### Option-(3) Finetune your dataset based on pre-trained LTSM-bundle model: [Time Series Prompt] and [Linear Tokenization] on gpt2-medium
 ```bash
 python3 main_ltsm.py \
     --model LTSM \
