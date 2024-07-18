@@ -8,7 +8,7 @@ This work investigates the transition from traditional Time Series Forecasting (
 
 :mega: We have released our [paper](https://arxiv.org/abs/2406.14045) and source code of LTSM-bundle-v1.0!
 
-:books: Follow our latest [English Tutorial](https://github.com/daochenzha/ltsm/tree/main/tutorial) or [中文教學](https://zhuanlan.zhihu.com/p/708804309) to costomize your LTSM!
+:books: Follow our latest [English Tutorial](https://github.com/daochenzha/ltsm/tree/main/tutorial) or [中文教程](https://zhuanlan.zhihu.com/p/708804309) to costomize your LTSM!
 
 :earth_americas: For more information, please visit: 
 * Paper: [https://arxiv.org/abs/2406.14045](https://arxiv.org/abs/2406.14045)
