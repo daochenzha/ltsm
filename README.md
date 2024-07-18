@@ -39,7 +39,7 @@ bash scripts/train_ltsm_csv.sh
 
 Training on **[Text Prompt]** and **[Linear Tokenization]**
 ```bash
-bash scripts/train_ltsm_csv.sh
+bash scripts/train_ltsm_textprompt_csv.sh
 ```
 
 Training on **[Time Series Prompt]** and **[Time Series Tokenization]**
