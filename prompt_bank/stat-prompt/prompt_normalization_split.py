@@ -10,7 +10,6 @@ import sys, os
 import torch
 from sklearn.preprocessing import StandardScaler
 
-from ltsm.data_provider.data_factory import data_paths
 
 def get_args():
     parser = argparse.ArgumentParser(description='LTSM')
@@ -123,8 +122,6 @@ if __name__ == "__main__":
         "test": {"root_path": root_path_test, "output_path": output_path_test, "normalize_param_fname": os.path.join(output_path_test, "normalization_params.pth.tar")},
     }
 
-    # data_path_buf = data_paths(root_path)
-    # print(data_path_buf)
 
     dataset_name = [
         "electricity",

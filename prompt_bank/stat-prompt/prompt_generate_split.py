@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import sys, os
 import torch
 
-from ltsm.data_provider.data_factory import data_paths
 
 def get_args():
     parser = argparse.ArgumentParser(description='LTSM')
@@ -179,8 +178,7 @@ if __name__ == "__main__":
     dataset_fullname = [os.path.join(root_path, name) for name in dataset_name]
     data_path_buf = []
     for dataset_dir in dataset_fullname:
-        paths = data_paths(dataset_dir)
-        data_path_buf.extend(paths)
+        data_path_buf.extend(dataset_dir)
 
     print(data_path_buf)
     create_data_dir(output_path)

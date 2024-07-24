@@ -11,7 +11,6 @@ import torch
 from sklearn.preprocessing import StandardScaler
 from sklearn import manifold
 
-from ltsm.data_provider.data_factory import data_paths
 
 def get_args():
     parser = argparse.ArgumentParser(description='LTSM')
