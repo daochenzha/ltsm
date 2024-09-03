@@ -21,7 +21,9 @@ class LTSM_WordPrompt(PreTrainedModel):
         self.stride = configs.stride
         self.pretrain = configs.pretrain
 
-        self.index2prompt = json.loads(configs.prompt_data_path)
+        with open(configs.prompt_data_path, "rt") as f:
+          self.index2prompt = json.load(f)
+
         if configs.pretrain:
             print("Loading the pretraining weight.")
             self.llm_config = AutoConfig.from_pretrained(configs.model_name_or_path)
@@ -65,11 +67,11 @@ class LTSM_WordPrompt(PreTrainedModel):
     
     def model_prune(self, configs):
         if "gpt2" in configs.model_name_or_path:
-            self.llm.h = self.llm.h[:configs.gpt_layers]
+            self.llm_model.h = self.llm_model.h[:configs.gpt_layers]
         elif "phi" in configs.model_name_or_path or "llama" in configs.model_name_or_path or "gemma" in configs.model_name_or_path:
-            self.llm.layers = self.llm.layers[:configs.gpt_layers]
+            self.llm_model.layers = self.llm_model.layers[:configs.gpt_layers]
         else:
-            raise NotImplementedError(f"No implementation in model prune for {self.llm}.")
+            raise NotImplementedError(f"No implementation in model prune for {self.llm_model}.")
         
         
     def calcute_lags(self, x_enc):
@@ -98,12 +100,13 @@ class LTSM_WordPrompt(PreTrainedModel):
         # ipdb.set_trace()
         prompt = []
         for b in range(x_enc.shape[0]):
+            b = int(b)
             min_values_str = str(min_values[b].tolist()[0])
             max_values_str = str(max_values[b].tolist()[0])
             median_values_str = str(medians[b].tolist()[0])
             lags_values_str = str(lags[b].tolist())
             prompt_ = (
-                f"<|start_prompt|>Dataset description: {self.index2prompt[index[b]]}<|end_prompt|>"
+                f"<|start_prompt|>Dataset description: {self.index2prompt[str(int(index[b]))]}<|end_prompt|>"
                 f"Task description: forecast the next {str(self.pred_len)} steps given the previous {str(self.seq_len)} steps information; "
                 "Input statistics: "
                 f"min value {min_values_str}, "
