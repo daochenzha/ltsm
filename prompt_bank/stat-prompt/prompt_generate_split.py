@@ -178,7 +178,7 @@ if __name__ == "__main__":
     dataset_fullname = [os.path.join(root_path, name) for name in dataset_name]
     data_path_buf = []
     for dataset_dir in dataset_fullname:
-        data_path_buf.extend(dataset_dir)
+        data_path_buf.append(dataset_dir)
 
     print(data_path_buf)
     create_data_dir(output_path)
