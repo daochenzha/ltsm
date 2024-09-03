@@ -158,8 +158,8 @@ def run(args):
     @torch.no_grad()
     def prediction_step(model, inputs, prediction_loss_only=False, ignore_keys=None):
         # CSV
-        input_data = inputs["input_data"].to(model.module.device)
-        labels = inputs["labels"].to(model.module.device)
+        input_data = inputs["input_data"].to(model.device)
+        labels = inputs["labels"].to(model.device)
         outputs = model(input_data)
         loss = nn.functional.mse_loss(outputs, labels)
         return (loss, outputs, labels)
