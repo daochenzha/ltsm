@@ -20,13 +20,12 @@ PROMPT="prompt_bank/text_prompt_data_csv/csv_prompt.json"
 epoch=1000
 downsample_rate=20
 freeze=0
-OUTPUT_PATH="output/ltsm_textprompt_lr${lr}_loraFalse_down${downsample_rate}_freeze${freeze}_e${epoch}_pred${pred_len}/"
 lr=1e-3
 
 
 for pred_len in 96 192 336 720
 do
-
+    OUTPUT_PATH="output/ltsm_textprompt_lr${lr}_loraFalse_down${downsample_rate}_freeze${freeze}_e${epoch}_pred${pred_len}/"
     CUDA_VISIBLE_DEVICES=0,1,2,3 python3 main_ltsm.py \
     --model LTSM_WordPrompt \
     --model_name_or_path gpt2-medium \

@@ -133,7 +133,6 @@ if __name__ == "__main__":
     ]
 
     for split_name, data_path in data_path_buf.items():
-
         root_path = data_path_buf[split_name]["root_path"]
         output_path = data_path_buf[split_name]["output_path"]
         normalize_param_fname = data_path_buf[split_name]["normalize_param_fname"]
@@ -141,7 +140,7 @@ if __name__ == "__main__":
         create_data_dir(output_path)
 
         dataset_fullname = [os.path.join(root_path, name) for name in dataset_name]
-        data_path_buf = []
+        data_path_buf_tmp = []
         if mode == "fit":
 
             for dataset_dir in dataset_fullname:
@@ -150,21 +149,21 @@ if __name__ == "__main__":
                 sample_idx = np.random.permutation(len(new_dataset))[:ds_size].astype(np.int64)
                 # ipdb.set_trace()
                 new_dataset = np.array(new_dataset)[sample_idx].tolist()
-                data_path_buf.extend(new_dataset)
+                data_path_buf_tmp.extend(new_dataset)
 
         else:
             for dataset_dir in dataset_fullname:
                 paths = os.listdir(dataset_dir)
                 new_dataset = [os.path.join(dataset_dir, path) for path in paths]
-                data_path_buf.extend(new_dataset)
+                data_path_buf_tmp.extend(new_dataset)
 
 
         if mode == "fit":
 
-            mean_std_export_ds(data_path_buf, normalize_param_fname)
+            mean_std_export_ds(data_path_buf_tmp, normalize_param_fname)
         else:
             # ipdb.set_trace()
-            standardscale_export(data_path_buf, normalize_param_fname, output_path, root_path)
+            standardscale_export(data_path_buf_tmp, normalize_param_fname, output_path, root_path)
 
 
 

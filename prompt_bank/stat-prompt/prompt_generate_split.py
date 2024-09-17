@@ -162,7 +162,7 @@ def create_data_dir(dir_name):
 
 if __name__ == "__main__":
 
-    root_path = "../../datasets/"
+    root_path = "./datasets/"
     output_path = "./prompt_bank/stat-prompt/prompt_data_split/"
 
 
@@ -178,7 +178,11 @@ if __name__ == "__main__":
     dataset_fullname = [os.path.join(root_path, name) for name in dataset_name]
     data_path_buf = []
     for dataset_dir in dataset_fullname:
-        data_path_buf.extend(dataset_dir)
+        for root, dirs, files in os.walk(dataset_dir):
+            for file_name in files:
+                if file_name.endswith(".csv"):
+                    file_path = os.path.join(root, file_name)
+                    data_path_buf.append(file_path)
 
     print(data_path_buf)
     create_data_dir(output_path)
