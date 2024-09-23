@@ -54,7 +54,7 @@ cd datasets
 download: https://drive.google.com/drive/folders/1hLFbz0FRxdiDCzgFYtKCOPJYSBVvwW9P
 ```
 
-Download the time sereis prompts 
+Download the time series prompts 
 ```bash
 cd prompt_bank/propmt_data_csv
 download: https://drive.google.com/drive/folders/1hLFbz0FRxdiDCzgFYtKCOPJYSBVvwW9P
