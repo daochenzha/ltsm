@@ -140,3 +140,6 @@ dmypy.json
 scratch/
 .DS_Store
 .idea/
+
+/datasets
+/prompt_bank
