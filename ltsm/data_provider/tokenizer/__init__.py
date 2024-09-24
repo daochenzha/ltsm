@@ -1,4 +1,4 @@
-from ltsm.data_provider.data_processing.standard_scaler import StandardScaler
+from ltsm.data_provider.tokenizer.standard_scaler import StandardScaler
 
 processor_dict = {}
 

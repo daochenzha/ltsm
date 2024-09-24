@@ -3,11 +3,22 @@ import torch
 import numpy as np
 import pandas as pd
 from torch.utils.data import DataLoader
-from ltsm.data_pipeline.reader import reader_dict
-from ltsm.data_provider.splitter import SplitterByTimestamp
-from ltsm.data_provider.data_processing import processor_dict
+from ltsm.data_reader import reader_dict
+from ltsm.data_provider.data_splitter import SplitterByTimestamp
+from ltsm.data_provider.tokenizer import processor_dict
 from ltsm.data_provider.dataset import TSDataset,  TSPromptDataset, TSTokenDataset
 import ipdb
+
+data2index = {
+    "ETTh1": 0, 
+    "ETTh2": 1, 
+    "ETTm1": 2, 
+    "ETTm2": 3,
+    "electricity":4, 
+    "exchange_rate":5, 
+    "traffic":6, 
+    "weather":7
+}
 
 def create_csv_datasets(
     data_path,
@@ -184,7 +195,6 @@ def create_csv_test_datasets(
     )
     return test_dataset, processor
 
-
 def create_csv_statprompt_datasets(
     data_path,
     prompt_data_path,
@@ -358,18 +368,6 @@ def create_csv_statprompt_test_datasets(
         downsample_rate=1,
     )
     return test_dataset, processor
-
-data2index = {
-    "ETTh1": 0, 
-    "ETTh2": 1, 
-    "ETTm1": 2, 
-    "ETTm2": 3,
-    "electricity":4, 
-    "exchange_rate":5, 
-    "traffic":6, 
-    "weather":7
-    }
-
 
 def create_csv_textprompt_datasets(
     data_path,
@@ -879,7 +877,6 @@ def _get_csv_prompt(prompt_folder_path, data_name, idx_file_name):
 
     prompt_data = [ prompt_data.iloc[i] for i in range(len(prompt_data)) ]
     return prompt_data
-
 
 def get_datasets(args):
     # Get datasets extension

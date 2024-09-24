@@ -131,10 +131,10 @@ def get_model(config):
         from .ltsm_wordprompt import LTSM_WordPrompt
         model = LTSM_WordPrompt(config)
     elif config.model == 'LTSM_Tokenizer':
-        from .ltsm_tokenizer import LTSM_Tokenizer
+        from .ltsm_ts_tokenizer import LTSM_Tokenizer
         model = LTSM_Tokenizer(config)
     else:
-        from .ltsm_model import LTSM
+        from .ltsm_stat_model import LTSM
         if config.local_pretrain == "None":
             model = LTSM(config)
         else:

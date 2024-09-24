@@ -1,2 +1,2 @@
 from .utils import get_model
-from .config import LTSMConfig
+from .ltsm_base import LTSMConfig

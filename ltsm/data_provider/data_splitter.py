@@ -1,11 +1,4 @@
-import os
-class DataSplitter:
-    def __init__(self):
-        pass
-
-    def get_splits(self):
-        pass
-
+from ltsm.common.base_splitter import DataSplitter
 
 class SplitterByTimestamp(DataSplitter):
     def __init__(self, seq_len, pred_len, train_ratio, val_ratio,prompt_folder_path, data_name):

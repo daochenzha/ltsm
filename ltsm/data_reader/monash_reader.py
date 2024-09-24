@@ -3,7 +3,7 @@ import pandas as pd
 from distutils.util import strtobool
 from datetime import datetime
 
-from ltsm.data_pipeline.reader.base_reader import BaseReader
+from ltsm.common.base_reader import BaseReader
 
 
 class MonashReader(BaseReader):

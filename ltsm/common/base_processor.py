@@ -1,7 +1,7 @@
-import torch
-
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 from dataclasses import dataclass
+import torch
+
 class BaseProcessor:
     def __init__(self):
         pass

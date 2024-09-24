@@ -3,8 +3,7 @@ import pandas as pd
 import torch
 from torch.utils.data.dataset import Dataset
 
-from ltsm.data_provider.data_processing.tokenizer_processor import TokenizerConfig
-
+from ltsm.data_provider.tokenizer.tokenizer_processor import TokenizerConfig
 
 class TSDataset(Dataset):
     def __init__(
@@ -45,7 +44,6 @@ class TSDataset(Dataset):
     def __len__(self):
         return self.num_items
     
-
 class TSPromptDataset(Dataset):
     def __init__(
         self, 
@@ -87,7 +85,6 @@ class TSPromptDataset(Dataset):
 
     def __len__(self):
         return self.num_items
-
 
 class TSTokenDataset(Dataset):
     def __init__(

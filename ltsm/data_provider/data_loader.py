@@ -358,7 +358,6 @@ class Dataset_Custom(Dataset):
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
     
-
 class Dataset_Pred(Dataset):
     def __init__(
         self,
@@ -471,7 +470,6 @@ class Dataset_Pred(Dataset):
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
 
-
 class Dataset_TSF(Dataset):
     def __init__(self,
         data_path,
@@ -566,7 +564,6 @@ class Dataset_TSF(Dataset):
     def __len__(self):
         return self.tot_len
 
-
 class Dataset_Custom_List(Dataset):
     def __init__(
         self,
@@ -644,7 +641,6 @@ class Dataset_Custom_List(Dataset):
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
     
-
 class Dataset_Custom_List_TS(Dataset):
     def __init__(
         self,

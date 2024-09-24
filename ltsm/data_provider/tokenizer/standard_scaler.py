@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 from sklearn.preprocessing import StandardScaler as SKStandardScaler
 
-from ltsm.data_provider.data_processing.base_processor import BaseProcessor
+from ltsm.common.base_processor import BaseProcessor
 
 
 class StandardScaler(BaseProcessor):
