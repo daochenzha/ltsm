@@ -1,5 +1,4 @@
-from ltsm.data_pipeline.reader.monash_reader import MonashReader
-
+from ltsm.data_reader.monash_reader import MonashReader
 reader_dict = {}
 
 def register_reader(module):
