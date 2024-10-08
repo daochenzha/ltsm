@@ -80,20 +80,20 @@ def create_csv_datasets(
         # Step 2.5 Load prompt for each instance
         # Train Prompt
         train_prompt_data_path = prompt_data_path + '/train'
-        for train_intance_idx in buff:
+        for train_instance_idx in buff:
             instance_prompt =_get_csv_prompt(
                 train_prompt_data_path,  
                 sub_data_path,
-                train_intance_idx
+                train_instance_idx
             )
             train_prompt_data.append(instance_prompt)
         
         val_prompt_data_path = prompt_data_path + '/val'
-        for val_intance_idx in buff:
+        for val_instance_idx in buff:
             instance_prompt = _get_csv_prompt(
                 val_prompt_data_path,  
                 sub_data_path,
-                val_intance_idx
+                val_instance_idx
             )
             val_prompt_data.append(instance_prompt)
         
@@ -178,11 +178,11 @@ def create_csv_test_datasets(
 
     test_prompt_data = []
     test_prompt_data_path = prompt_data_path + "/test"
-    for test_intance_idx in buff:
+    for test_instance_idx in buff:
             instance_prompt = _get_csv_prompt(
                 test_prompt_data_path,  
                 test_data_path,
-                test_intance_idx
+                test_instance_idx
             )
             test_prompt_data.append(instance_prompt)
     test_dataset = TSPromptDataset (
@@ -255,20 +255,20 @@ def create_csv_statprompt_datasets(
         # Step 2.5 Load prompt for each instance
         # Train Prompt
         train_prompt_data_path = prompt_data_path + '/train'
-        for train_intance_idx in buff:
+        for train_instance_idx in buff:
             instance_prompt =_get_csv_prompt(
                 train_prompt_data_path,  
                 sub_data_path,
-                train_intance_idx
+                train_instance_idx
             )
             train_prompt_data.append(instance_prompt)
         
         val_prompt_data_path = prompt_data_path + '/val'
-        for val_intance_idx in buff:
+        for val_instance_idx in buff:
             instance_prompt = _get_csv_prompt(
                 val_prompt_data_path,  
                 sub_data_path,
-                val_intance_idx
+                val_instance_idx
             )
             val_prompt_data.append(instance_prompt)
         
@@ -352,11 +352,11 @@ def create_csv_statprompt_test_datasets(
 
     test_prompt_data = []
     test_prompt_data_path = prompt_data_path + "/test"
-    for test_intance_idx in buff:
+    for test_instance_idx in buff:
             instance_prompt = _get_csv_prompt(
                 test_prompt_data_path,  
                 test_data_path,
-                test_intance_idx
+                test_instance_idx
             )
             test_prompt_data.append(instance_prompt)
             
@@ -589,20 +589,20 @@ def create_csv_token_datasets(
         # Step 2.5 Load prompt for each instance
         # Train Prompt
         train_prompt_data_path = prompt_data_path + '/train'
-        for train_intance_idx in buff:
+        for train_instance_idx in buff:
             instance_prompt =_get_csv_prompt(
                 train_prompt_data_path,  
                 sub_data_path,
-                train_intance_idx
+                train_instance_idx
             )
             train_prompt_data.append(instance_prompt)
         
         val_prompt_data_path = prompt_data_path + '/val'
-        for val_intance_idx in buff:
+        for val_instance_idx in buff:
             instance_prompt = _get_csv_prompt(
                 val_prompt_data_path,  
                 sub_data_path,
-                val_intance_idx
+                val_instance_idx
             )
             val_prompt_data.append(instance_prompt)
         
@@ -686,11 +686,11 @@ def create_csv_token_test_datasets(
 
     test_prompt_data = []
     test_prompt_data_path = prompt_data_path + "/test"
-    for test_intance_idx in buff:
+    for test_instance_idx in buff:
             instance_prompt = _get_csv_prompt(
                 test_prompt_data_path,  
                 test_data_path,
-                test_intance_idx
+                test_instance_idx
             )
             test_prompt_data.append(instance_prompt)
             
@@ -754,11 +754,11 @@ def create_datasets(
         )
 
         # Step 2.5 Load prompt for each instance
-        for intance_idx in buff:
+        for instance_idx in buff:
             instance_prompt = _get_prompt(
                 prompt_data_path,  
                 sub_data_path,
-                intance_idx
+                instance_idx
             )
             prompt_data.append(instance_prompt)
 
@@ -832,11 +832,11 @@ def create_test_datasets(
     )
 
     prompt_data = []
-    for intance_idx in buff:
+    for instance_idx in buff:
             instance_prompt = _get_prompt(
                 prompt_data_path,  
                 test_data_path,
-                intance_idx
+                instance_idx
             )
             prompt_data.append(instance_prompt)
 
@@ -866,6 +866,8 @@ def _get_prompt(prompt_folder_path, data_name, idx_file_name):
 def _get_csv_prompt(prompt_folder_path, data_name, idx_file_name):
     data_path = data_name.split('/')[-2]+'/'+data_name.split('/')[-1].split('.')[0]
     idx_file_name = idx_file_name.replace("/", "-")
+    idx_file_name = idx_file_name.replace("**", "_")
+    idx_file_name = idx_file_name.replace("%", "_")
     
     prompt_path = os.path.join(prompt_folder_path,data_path+'_'+str(idx_file_name)+"_prompt.pth.tar")
     if not os.path.exists(prompt_path):
