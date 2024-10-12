@@ -6,7 +6,7 @@ import argparse
 import random
 import ipdb
 
-from ltsm.data_provider.data_factory import get_data_loaders, get_datasets,get_test_datasets
+from ltsm.data_provider.data_factory import get_data_loaders, get_datasets
 from ltsm.data_provider.data_loader import HF_Dataset
 from ltsm.models import get_model, LTSMConfig
 from peft import get_peft_config, get_peft_model, LoraConfig
@@ -183,7 +183,7 @@ def run(args):
         load_best_model_at_end=True,
     )
     
-    train_dataset, eval_dataset, _ = get_datasets(args)
+    train_dataset, eval_dataset, test_dataset_list, _ = get_datasets(args)
     train_dataset, eval_dataset= HF_Dataset(train_dataset), HF_Dataset(eval_dataset)
     
     trainer = Trainer(
@@ -208,11 +208,9 @@ def run(args):
         trainer.save_state()
 
     # Testing settings
-    for data_path in args.test_data_path_list:
+    for test_dataset in test_dataset_list:
         trainer.compute_loss = compute_loss
         trainer.prediction_step = prediction_step   
-        args.test_data_path = data_path
-        test_dataset, _ = get_test_datasets(args)
         test_dataset = HF_Dataset(test_dataset)
 
         metrics = trainer.evaluate(test_dataset)

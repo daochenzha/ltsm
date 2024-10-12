@@ -1,4 +1,5 @@
 from ltsm.data_reader.monash_reader import MonashReader
+from ltsm.data_reader.csv_reader import CSVReader
 reader_dict = {}
 
 def register_reader(module):
@@ -6,3 +7,4 @@ def register_reader(module):
     reader_dict[module.module_id] = module
 
 register_reader(MonashReader)
+register_reader(CSVReader)
