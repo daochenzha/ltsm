@@ -1,4 +1,8 @@
 from ltsm.common.base_splitter import DataSplitter
+import pandas as pd
+import numpy as np
+
+from typing import Tuple, List
 
 class SplitterByTimestamp(DataSplitter):
     def __init__(self, seq_len, pred_len, train_ratio, val_ratio,prompt_folder_path):
@@ -29,15 +33,20 @@ class SplitterByTimestamp(DataSplitter):
 
         return train_split, val_split, test_split, buff
 
-    def get_csv_splits(self, df_data):
-        train_split, val_split, test_split, buff = [], [], [], []
-        # cols = df_data.columns[1:]
-        raw_data = df_data.to_numpy()
-        # if 'ETTh1' in self.data_name or 'ETTh2' in self.data_name:
-        #     raw_data = df_data[cols][:14400].T.values
+    def get_csv_splits(self, df_data: pd.DataFrame) -> Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+        """
+        Splits the data into training-validation-training sets.
 
-        # if 'ETTm1' in self.data_name or 'ETTm2' in self.data_name:
-        #     raw_data = df_data[cols][:57600].T.values
+        Args:
+            df_data (pd.DataFrame): A Pandas DataFrame containing the data to be split.
+
+        Returns:
+            Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+                A tuple containing fours lists of sequences for the training, validation, and test sets. 
+                The last list contains the row labels of these sequences.
+        """
+        train_split, val_split, test_split, buff = [], [], [], []
+        raw_data = df_data.to_numpy()
 
         for index, sequence in zip(df_data.index, raw_data):
             

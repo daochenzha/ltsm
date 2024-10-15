@@ -1,0 +1,172 @@
+import pandas as pd
+import numpy as np
+import pytest
+import torch
+import math
+from ltsm.data_provider.dataset import TSPromptDataset, TSTokenDataset
+from ltsm.data_provider.data_factory import DatasetFactory
+
+@pytest.fixture
+def setup(tmp_path):
+    d = tmp_path / "mock"
+    d.mkdir()
+    data_path = d / "mock.csv"
+
+    d = tmp_path / "prompt_bank"
+    d.mkdir()
+    d = d / "prompt_data_normalize_split"
+    d.mkdir()
+
+    prompt_data_path = d / "train"
+    prompt_data_path.mkdir()
+
+    prompt_data_folder = prompt_data_path / "mock"
+    prompt_data_folder.mkdir()
+    return data_path, prompt_data_path, prompt_data_folder, DatasetFactory(
+        data_paths=[str(data_path)],
+        prompt_data_path=str(prompt_data_path),
+        data_processing="standard_scaler",
+        seq_len=10,
+        pred_len=1,
+        train_ratio=0.7,
+        val_ratio=0.1,
+        model="",
+        scale_on_train=True
+    )
+
+def test_data_factory_load_prompts_invalid_chars(setup):
+    data_path, prompt_data_path, prompt_data_folder, datasetFactory = setup
+    buff = ['rho (g/m**3)', 'rh (%)', 'speed (m/s)', 0, 1]
+    correct = ['rho (g-m_3)', 'rh (_)', 'speed (m-s)', '0', '1']
+   
+    # Mock data for mock pth file
+    train_buf = pd.DataFrame(pd.DataFrame(np.zeros((5, 133)), columns=[i for i in range(133)]))
+
+    for i, filename in enumerate(correct):
+        p = prompt_data_folder / f"mock_{filename}_prompt.pth.tar"
+        train_prompt = pd.DataFrame(train_buf.iloc[i].values)
+        train_prompt = train_prompt.T
+        assert train_prompt.shape == (1, 133)
+        torch.save(train_prompt, str(p))
+        
+    prompt_data = datasetFactory.loadPrompts(str(data_path), str(prompt_data_path), buff)
+    assert len(prompt_data) == 5
+    for i in range(5):
+        assert len(prompt_data[i]) == 133
+
+def test_data_factory_load_prompts_invalid_prompt_file(setup):
+    data_path, prompt_data_path, prompt_data_folder, datasetFactory = setup
+
+    buff = [i for i in range(4)]
+    for index in enumerate(buff):
+        p = prompt_data_folder / f"mock_{index}_prompt.pth.tar"
+        p.write_text("not valid .pth file content")
+
+    prompt_data = datasetFactory.loadPrompts(str(data_path), str(prompt_data_path), buff)
+    assert len(prompt_data) == 4
+    for i in range(4):
+        assert prompt_data[i] is None
+
+def test_data_factory_load_csv_prompts(setup):
+    data_path, prompt_data_path, prompt_data_folder, datasetFactory = setup
+    buff = ["linear", "quadratic", "exponential", "sine"]
+
+    data = np.array([
+        [2*i for i in range(100)],
+        [i**2 for i in range(100)],
+        [math.exp(i) for i in range(100)],
+        [math.sin(i) for i in range(100)]
+    ])
+    train_buf = pd.DataFrame(data, index=buff)
+
+    for i, filename in enumerate(buff):
+        p = prompt_data_folder / f"mock_{filename}_prompt.pth.tar"
+        train_prompt = pd.DataFrame(train_buf.iloc[i].values)
+        train_prompt = train_prompt.T
+        assert train_prompt.shape == (1, 100)
+        torch.save(train_prompt, str(p))
+        
+    prompt_data = datasetFactory.loadPrompts(str(data_path), str(prompt_data_path), buff)
+    assert len(prompt_data) == 4
+    prompt_data_buf = pd.DataFrame(np.array(prompt_data), index=buff)
+    assert prompt_data_buf.equals(train_buf)
+    
+
+def test_data_factory_load_monash_prompts(setup):
+    data_path, prompt_data_path, prompt_data_folder, datasetFactory = setup
+
+    # Create a monash file
+    d = data_path.parent / "monash"
+    d.mkdir()
+    data_path = d / "mock.tsf"
+    buff = [i for i in range(4)]
+
+    data = np.array([
+        [2*i for i in range(100)],
+        [i**2 for i in range(100)],
+        [math.exp(i) for i in range(100)],
+        [math.sin(i) for i in range(100)]
+    ])
+    train_buf = pd.DataFrame(data, index=buff)
+
+    for index in buff:
+        p = prompt_data_folder / f"T{index+1}_prompt.pth.tar"
+        train_prompt = pd.DataFrame(train_buf.iloc[index].values)
+        train_prompt = train_prompt.T
+        assert train_prompt.shape == (1, 100)
+        torch.save(train_prompt, str(p))
+        
+    prompt_data = datasetFactory.loadPrompts(str(data_path), str(prompt_data_path), buff)
+    assert len(prompt_data) == 4
+    prompt_data_buf = pd.DataFrame(np.array(prompt_data), index=buff)
+    assert prompt_data_buf.equals(train_buf)
+
+def test_data_factory_load_word_prompts(setup):
+    data_path, prompt_data_path, prompt_data_folder, datasetFactory = setup
+    buff = [i for i in range(4)]
+
+    # Change model to 'LTSM_WordPrompt'
+    datasetFactory.model = "LTSM_WordPrompt"
+        
+    prompt_data = datasetFactory.loadPrompts(str(data_path), str(prompt_data_path), buff)
+    assert len(prompt_data) == 4
+    for i in range(4):
+        assert len(prompt_data[i]) == 1
+        assert prompt_data[i][0] == 0
+    
+
+def test_data_factory_createTorchDS_empty(setup):
+    data_path, prompt_data_path, prompt_data_folder, datasetFactory = setup
+    dataset = datasetFactory.createTorchDS([], [], 1)
+    assert dataset is None
+
+def test_data_factory_createTorchDS(setup):
+    data_path, prompt_data_path, prompt_data_folder, datasetFactory = setup
+    seq_len = 10
+    pred_len = 1
+    prompt_len = 10
+    data = [np.array([2*i for i in range(100)])]
+    prompt_data = [[0.1*i for i in range(10)]]
+    dataset = datasetFactory.createTorchDS(data, prompt_data, 1)
+    assert type(dataset) == TSPromptDataset
+    for i in range(len(dataset)):
+        x = dataset[i][0]
+        y = dataset[i][1]
+        # Assert that the first prompt_len data points in a row is the prompt
+        np.testing.assert_equal(x.numpy()[:prompt_len], np.array(prompt_data[0]).reshape(prompt_len, 1))
+
+        # Assert that the next seq_len data points in a row matches data
+        np.testing.assert_equal(x.numpy()[prompt_len:prompt_len+seq_len], data[0][i:i+seq_len].reshape(seq_len, 1))
+
+        # Assert that the row prediction matches the next pred_len in data
+        np.testing.assert_equal(y.numpy()[:pred_len], data[0][i+seq_len:i+seq_len+pred_len].reshape(pred_len, 1))
+
+
+def test_data_factory_createTorchDS_tokenizer(setup):
+    data_path, prompt_data_path, prompt_data_folder, datasetFactory = setup
+    # Set model to 'LTSM_Tokenizer'
+    datasetFactory.model = "LTSM_Tokenizer"
+    data = [np.array([2*i for i in range(100)])]
+    prompt_data = [[0.1*i for i in range(10)]]
+    dataset = datasetFactory.createTorchDS(data, prompt_data, 1)
+    assert type(dataset) == TSTokenDataset
