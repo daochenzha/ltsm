@@ -2,20 +2,20 @@ import taosws
 import pandas as pd
 import os
 
-# input data path, change to your own
+# change to your own
 datapath = "input"
-# output data path, change to your own
 output_folder = 'output'
-# database name
 database = "time_series_demo"
+user="root"
+password="taosdata"
 
 # create_connection() function to connect to the database.
 def create_connection(host, port):
     conn = None
     try:
         conn = taosws.connect(
-            user="root",
-            password="taosdata",
+            user=user,
+            password=password,
             host=host,
             port=port,
         )
@@ -59,9 +59,10 @@ def insert_data_from_csv(conn, database, csv_file, table_name):
         df = pd.read_csv(csv_file)
         df[df.columns[0]] = pd.to_datetime(df[df.columns[0]], format="%m/%d/%Y %H:%M:%S")
         setup_tables(conn, database, table_name, df)
+        cursor.execute(f"USE {database}")
         for _, row in df.iterrows():
             values = [f"'{row[df.columns[0]]}'"] + [str(row[col]) for col in df.columns[1:]]
-            cursor.execute(f"USE {database}")
+
             cursor.execute(f"INSERT INTO {table_name} VALUES ({', '.join(values)})")
 
         print(f"Data from {csv_file} inserted into {table_name}.")
@@ -88,6 +89,7 @@ def retrieve_data_to_csv(conn, database, table_name, output_file):
 
 
 def main():
+
     # change the host and port to your own
     host="35.153.211.255"
     port=6041
