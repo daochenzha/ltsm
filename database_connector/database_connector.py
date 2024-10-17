@@ -6,8 +6,9 @@ import os
 datapath = "input"
 output_folder = 'output'
 database = "time_series_demo"
-user="root"
-password="taosdata"
+user = "root"
+password = "taosdata"
+
 
 # create_connection() function to connect to the database.
 def create_connection(host, port):
@@ -25,6 +26,7 @@ def create_connection(host, port):
         print(f"Failed to connect to {host}:{port}, ErrMessage: {err}")
         raise err
 
+
 # setup_database() function to create a new database if it doesn't exist.
 def setup_database(conn, database):
     try:
@@ -35,15 +37,28 @@ def setup_database(conn, database):
         print(f"Error setting up database: {err}")
         raise err
 
-# setup_tables() function to create tables based on CSV column names.
+
+# setup_tables() function to create tables based on CSV column names and data types.
 def setup_tables(conn, database, table_name, df):
     try:
         cursor = conn.cursor()
         cursor.execute(f"USE {database}")
         columns = df.columns
         schema_columns = ["ts TIMESTAMP"]
+
+        # Infer column types and set schema accordingly
         for column in columns[1:]:
-            schema_columns.append(f"{column.replace(' ', '_')} FLOAT")
+            dtype = df[column].dtype
+            if pd.api.types.is_float_dtype(dtype):
+                schema_columns.append(f"{column.replace(' ', '_')} FLOAT")
+            elif pd.api.types.is_integer_dtype(dtype):
+                schema_columns.append(f"{column.replace(' ', '_')} INT")
+            elif pd.api.types.is_bool_dtype(dtype):
+                schema_columns.append(f"{column.replace(' ', '_')} BOOL")
+            elif pd.api.types.is_datetime64_any_dtype(dtype):
+                schema_columns.append(f"{column.replace(' ', '_')} TIMESTAMP")
+            else:  # Treat as STRING for other types like object (text)
+                schema_columns.append(f"{column.replace(' ', '_')} STRING")
 
         schema = f"({', '.join(schema_columns)})"
         cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name} {schema}")
@@ -52,25 +67,42 @@ def setup_tables(conn, database, table_name, df):
         print(f"Error setting up database or table {table_name}: {err}")
         raise err
 
+
 # insert_data_from_csv() function to insert data from CSV files into tables.
 def insert_data_from_csv(conn, database, csv_file, table_name):
     try:
         cursor = conn.cursor()
         df = pd.read_csv(csv_file)
-        df[df.columns[0]] = pd.to_datetime(df[df.columns[0]], format="%m/%d/%Y %H:%M:%S")
+
+        # Ensure the first column is a timestamp
+        df[df.columns[0]] = pd.to_datetime(df[df.columns[0]], errors='coerce')
+
         setup_tables(conn, database, table_name, df)
         cursor.execute(f"USE {database}")
+
         for _, row in df.iterrows():
-            values = [f"'{row[df.columns[0]]}'"] + [str(row[col]) for col in df.columns[1:]]
+            values = [f"'{row[df.columns[0]]}'"]  # Timestamp value
+            for col in df.columns[1:]:
+                value = row[col]
+                if pd.isna(value):
+                    values.append("NULL")
+                elif isinstance(value, str):
+                    values.append(f"'{value}'")
+                elif isinstance(value, bool):
+                    values.append("true" if value else "false")
+                else:
+                    values.append(str(value))
 
-            cursor.execute(f"INSERT INTO {table_name} VALUES ({', '.join(values)})")
+            insert_query = f"INSERT INTO {table_name} VALUES({', '.join(values)})"
+            cursor.execute(insert_query)
 
-        print(f"Data from {csv_file} inserted into {table_name}.")
+        print(f"Data from {csv_file} inserted into table {table_name} successfully.")
     except Exception as err:
         print(f"Error inserting data from {csv_file} into {table_name}: {err}")
         raise err
 
 
+# retrieve_data_to_csv() function to retrieve data from a table and save it to a CSV file.
 def retrieve_data_to_csv(conn, database, table_name, output_file):
     try:
         cursor = conn.cursor()
@@ -88,11 +120,10 @@ def retrieve_data_to_csv(conn, database, table_name, output_file):
         raise err
 
 
-def main():
-
-    # change the host and port to your own
-    host="35.153.211.255"
-    port=6041
+# Example usage
+if __name__ == "__main__":
+    host = "35.153.211.255"
+    port = 6041
 
     conn = create_connection(host, port)
 
@@ -111,7 +142,3 @@ def main():
 
         finally:
             conn.close()
-
-
-if __name__ == "__main__":
-    main()
