@@ -2,10 +2,9 @@ import taosws
 import pandas as pd
 import os
 
-# input data path
-datapath = "input_data"
-
-# output data path
+# input data path, change to your own
+datapath = "input"
+# output data path, change to your own
 output_folder = 'output'
 # database name
 database = "time_series_demo"
@@ -27,7 +26,7 @@ def create_connection(host, port):
         print(f"Failed to connect to {host}:{port}, ErrMessage: {err}")
         raise err
 
-
+# setup_database() function to create a new database if it doesn't exist.
 def setup_database(conn, database):
     try:
         cursor = conn.cursor()
@@ -37,12 +36,11 @@ def setup_database(conn, database):
         print(f"Error setting up database: {err}")
         raise err
 
-
+# setup_tables() function to create tables based on CSV column names.
 def setup_tables(conn, database, table_name, df):
     try:
         cursor = conn.cursor()
         cursor.execute(f"USE {database}")
-        # Dynamically create schema based on CSV column names
         columns = df.columns
         schema_columns = ["ts TIMESTAMP"]
         for column in columns[1:]:
@@ -55,15 +53,13 @@ def setup_tables(conn, database, table_name, df):
         print(f"Error setting up database or table {table_name}: {err}")
         raise err
 
-
+# insert_data_from_csv() function to insert data from CSV files into tables.
 def insert_data_from_csv(conn, database, csv_file, table_name):
     try:
         cursor = conn.cursor()
         df = pd.read_csv(csv_file)
         df[df.columns[0]] = pd.to_datetime(df[df.columns[0]], format="%m/%d/%Y %H:%M:%S")
-
         setup_tables(conn, database, table_name, df)
-        # Dynamically create SQL INSERT queries based on CSV data
         for _, row in df.iterrows():
             values = [f"'{row[df.columns[0]]}'"] + [str(row[col]) for col in df.columns[1:]]
             cursor.execute(f"USE {database}")
@@ -81,8 +77,6 @@ def retrieve_data_to_csv(conn, database, table_name, output_file):
         cursor.execute(f"USE {database}")
         cursor.execute(f"SELECT * FROM {table_name}")
         data = cursor.fetchall()
-
-        # Retrieve column names dynamically
         cursor.execute(f"DESCRIBE {table_name}")
         columns = [desc[0] for desc in cursor.fetchall()]
 
@@ -95,6 +89,7 @@ def retrieve_data_to_csv(conn, database, table_name, output_file):
 
 
 def main():
+    # change the host and port to your own
     host="35.153.211.255"
     port=6041
 
@@ -104,17 +99,11 @@ def main():
         try:
             setup_database(conn, database)
             csv_files = [os.path.join(datapath, f) for f in os.listdir(datapath) if f.endswith('.csv')]
-            # Generate table names by removing ".csv" from filenames
             tables = [os.path.splitext(os.path.basename(csv_file))[0] for csv_file in csv_files]
-
             for csv_file, table_name in zip(csv_files, tables):
                 insert_data_from_csv(conn, database, csv_file, table_name)
-
-            # Output folder
-
             if not os.path.exists(output_folder):
                 os.makedirs(output_folder)
-
             for table_name in tables:
                 output_file = os.path.join(output_folder, f"{table_name}.csv")
                 retrieve_data_to_csv(conn, database, table_name, output_file)
