@@ -12,7 +12,6 @@ database = "time_series_demo"
 # create_connection() function to connect to the database.
 def create_connection(host, port):
     conn = None
-
     try:
         conn = taosws.connect(
             user="root",
