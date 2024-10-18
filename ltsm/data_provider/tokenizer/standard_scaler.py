@@ -8,6 +8,12 @@ from typing import Tuple, List
 
 
 class StandardScaler(BaseProcessor):
+    """
+    Represents a Standard Scaler object that uses Sklearn's Standard Scaler for data processing.
+
+    Attributes:
+        module_id (str): The identifier for base processor objects.
+    """
     module_id = "standard_scaler"
     
     def __init__(self):
@@ -52,19 +58,40 @@ class StandardScaler(BaseProcessor):
 
         return scaled_train_data, scaled_val_data, scaled_test_data
 
-    def inverse_process(self, data):
+    def inverse_process(self, data: np.ndarray)->np.ndarray:
+        """
+        Scales back the data to its original representation.
+
+        Args:
+            data (np.ndarray): The data to scale back.
+
+        Returns:
+            np.ndarray: The scaled back data.
+        """
         assert self._scaler is not None, "StandardScaler has not been fitted"
         raw_shape = data.shape
         data = self._scaler.inverse_transform(data.reshape(-1, 1))
 
         return data.reshape(raw_shape)
 
-    def save(self, save_dir):
+    def save(self, save_dir: str):
+        """
+        Saves the scaler to the save_dir directory as a Pickle file named processor.pkl.
+
+        Args:
+            save_dir (str): The directory where to store the scaler.
+        """
         save_path = os.path.join(save_dir, "processor.pkl")
         with open(save_path, 'wb') as f:
             pickle.dump(self._scaler, f)
 
     def load(self, save_dir):
+        """
+        Loads the scaler saved at the save_dir directory.
+
+        Args:
+            save_dir (str): The directory the scaler was saved.
+        """
         save_path = os.path.join(save_dir, "processor.pkl")
         with open(save_path, 'rb') as f:
             self._scaler = pickle.load(f)

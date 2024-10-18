@@ -5,6 +5,7 @@ import torch
 import math
 from ltsm.data_provider.dataset import TSPromptDataset, TSTokenDataset
 from ltsm.data_provider.data_factory import DatasetFactory
+from unittest.mock import call
 
 @pytest.fixture
 def setup(tmp_path):
@@ -170,3 +171,76 @@ def test_data_factory_createTorchDS_tokenizer(setup):
     prompt_data = [[0.1*i for i in range(10)]]
     dataset = datasetFactory.createTorchDS(data, prompt_data, 1)
     assert type(dataset) == TSTokenDataset
+
+
+def test_data_factory_getDatasets(mocker, setup):
+    data_path, prompt_data_path, prompt_data_folder, datasetFactory = setup
+
+    datasetFactory.data_paths = [
+        str(data_path.parent / "fake1.csv"),
+        str(data_path.parent / "fake2.csv"),
+        str(data_path.parent / "fake3.csv"),
+        str(data_path.parent / "fake4.csv")
+    ]
+    mock_ndarray = np.array([])
+    mock_df = pd.DataFrame([])
+    mock_torch_ds = TSPromptDataset([], [], 0, 0)
+    mocker.patch.object(datasetFactory, 'fetch', return_value=mock_df)
+    mocker.patch.object(datasetFactory.splitter, 'get_csv_splits', return_value=([],[],[],[]))
+    mocker.patch.object(datasetFactory.processor, 'process', return_value=([mock_ndarray], [mock_ndarray], [mock_ndarray]))
+    mocker.patch.object(datasetFactory, 'loadPrompts', return_value=[])
+    mocker.patch.object(datasetFactory, 'createTorchDS', return_value=mock_torch_ds)
+
+    train_dataset, val_dataset, test_datasets = datasetFactory.getDatasets()
+
+    assert len(train_dataset) == 0
+    assert len(val_dataset) == 0
+    assert len(test_datasets) == 4
+    for i in range(4):
+        assert len(test_datasets[i]) == 0
+
+    expected_calls = [call(data_path) for data_path in datasetFactory.data_paths]
+    datasetFactory.fetch.assert_has_calls(expected_calls)
+
+    assert datasetFactory.splitter.get_csv_splits.call_count == 4
+    assert datasetFactory.processor.process.call_count == 4
+    assert datasetFactory.loadPrompts.call_count == 12
+    # createTorchDS should be called once each to make train_dataset and val_dataset
+    # createTorchDS should be called four more times for each separate test_dataset
+    assert datasetFactory.createTorchDS.call_count == 6
+
+def test_data_factory_getDatasets_testset_no_split(mocker, setup):
+    data_path, prompt_data_path, prompt_data_folder, datasetFactory = setup
+
+    datasetFactory.data_paths = [
+        str(data_path.parent / "fake1.csv"),
+        str(data_path.parent / "fake2.csv"),
+        str(data_path.parent / "fake3.csv"),
+        str(data_path.parent / "fake4.csv")
+    ]
+    # Set split_test_sets to False
+    datasetFactory.split_test_sets = False
+    
+    mock_ndarray = np.array([])
+    mock_df = pd.DataFrame([])
+    mock_torch_ds = TSPromptDataset([], [], 0, 0)
+    mocker.patch.object(datasetFactory, 'fetch', return_value=mock_df)
+    mocker.patch.object(datasetFactory.splitter, 'get_csv_splits', return_value=([],[],[],[]))
+    mocker.patch.object(datasetFactory.processor, 'process', return_value=([mock_ndarray], [mock_ndarray], [mock_ndarray]))
+    mocker.patch.object(datasetFactory, 'loadPrompts', return_value=[])
+    mocker.patch.object(datasetFactory, 'createTorchDS', return_value=mock_torch_ds)
+
+    train_dataset, val_dataset, test_datasets = datasetFactory.getDatasets()
+
+    assert len(train_dataset) == 0
+    assert len(val_dataset) == 0
+    assert len(test_datasets) == 1
+    assert len(test_datasets[0]) == 0
+
+    expected_calls = [call(data_path) for data_path in datasetFactory.data_paths]
+    datasetFactory.fetch.assert_has_calls(expected_calls)
+
+    assert datasetFactory.splitter.get_csv_splits.call_count == 4
+    assert datasetFactory.processor.process.call_count == 4
+    assert datasetFactory.loadPrompts.call_count == 12
+    assert datasetFactory.createTorchDS.call_count == 3

@@ -31,7 +31,8 @@ class DatasetFactory:
         val_ratio: float,
         model: str= None,
         scale_on_train: bool = False, 
-        downsample_rate: int = 10
+        downsample_rate: int = 10,
+        split_test_sets: bool = True
     ):
         """
         Initializes the DatasetFactory with the given arguments.
@@ -47,6 +48,7 @@ class DatasetFactory:
             model (str): The model name. Options includes 'LTSM', 'LTSM_WordPrompt', and 'LTSM_Tokenizer'.
             scale_on_train (bool): Indicates whether the datasets should be scaled based on the training data.
             downsample_rate (int): The downsampling rate for training and validation datasets.
+            split_test_sets (bool): Indicates whether the test sets should be saved separately by data_path.
         """
         self.data_paths = data_paths
         self.prompt_data_path = prompt_data_path
@@ -55,14 +57,14 @@ class DatasetFactory:
         self.pred_len = pred_len
         self.scale_on_train = scale_on_train
         self.downsample_rate = downsample_rate
+        self.split_test_sets = split_test_sets
 
         # Initialize dataset splitter
         self.splitter = SplitterByTimestamp(
             seq_len,
             pred_len,
             train_ratio,
-            val_ratio,
-            prompt_folder_path=self.prompt_data_path
+            val_ratio
         )
 
         # Initialize the data preprocessor
@@ -199,7 +201,8 @@ class DatasetFactory:
                 Test data is kept separate and are returned as a list of time-series datasets where each dataset corresponds to 
                 one of the data sources.
         """
-        train_data, val_data, train_prompt_data, val_prompt_data, test_ds_list = [], [], [], [], []
+        train_data, val_data, test_data, train_prompt_data, val_prompt_data, test_prompt_data = [], [], [], [], [], []
+        test_ds_list = []
         for data_path in self.data_paths:
             # Step 0: Read data, the output is a list of 1-d time-series
             df_data = self.fetch(data_path)
@@ -231,10 +234,14 @@ class DatasetFactory:
 
             # Test Prompt
             test_prompt_data_path = self.prompt_data_path + '/test'
-            test_prompt_data = self.loadPrompts(data_path, test_prompt_data_path, buff)
+            sub_test_prompt_data = self.loadPrompts(data_path, test_prompt_data_path, buff)
 
-            # Create a Torch dataset for each sub test dataset
-            test_ds_list.append(self.createTorchDS(sub_test_data, test_prompt_data, 1))
+            if self.split_test_sets:
+                # Create a Torch dataset for each sub test dataset
+                test_ds_list.append(self.createTorchDS(sub_test_data, sub_test_prompt_data, 1))
+            else:
+                test_data.extend(sub_test_data)
+                test_prompt_data.extend(sub_test_prompt_data)
         
         # Step 3: Create Torch datasets (samplers)
         train_ds = self.createTorchDS(train_data, train_prompt_data, self.downsample_rate)
@@ -242,6 +249,9 @@ class DatasetFactory:
             val_ds = self.createTorchDS(val_data, val_prompt_data, 54)
         else:
             val_ds = self.createTorchDS(val_data, val_prompt_data, self.downsample_rate)
+
+        if not self.split_test_sets:
+            test_ds_list.append(self.createTorchDS(test_data, test_prompt_data, 1))
         
         return train_ds, val_ds, test_ds_list
 
@@ -272,7 +282,8 @@ def get_data_loaders(args):
         pred_len=args.pred_len,
         train_ratio=args.train_ratio,
         val_ratio=args.val_ratio,
-        model=args.model
+        model=args.model,
+        split_test_sets=False
     )
     train_dataset, val_dataset, test_datasets = dataset_factory.getDatasets()
     print(f"Data loaded, train size {len(train_dataset)}, val size {len(val_dataset)}")
@@ -292,9 +303,9 @@ def get_data_loaders(args):
         num_workers=0,
     )
 
-    # TODO: Data loader originally loads one test dataset - doesn't make sense
+    # split_test_data set to False, length of test_datasets is 1
     test_loader = DataLoader(
-        test_datasets,
+        test_datasets[0],
         batch_size=args.batch_size,
         shuffle=True,
         num_workers=0,
