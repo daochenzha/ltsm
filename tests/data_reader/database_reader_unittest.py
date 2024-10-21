@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-import database_connector as db_connector
+import ltsm.data_reader.database_reader as db_connector
 import pandas as pd
 
 class TestDatabaseConnector(unittest.TestCase):
@@ -8,16 +8,16 @@ class TestDatabaseConnector(unittest.TestCase):
     def setUp(self):
         # Sample DataFrame with different data types
         self.input_df = pd.DataFrame({
-            'Updated Time': ['06/30/2023 19:01:24', '06/30/2023 19:03:04'],
-            'Temperature': [61.71, 69.21],  # Float
-            'Count': [10, 15],  # Integer
-            'Status': [True, False],  # Boolean
-            'Description': ['Normal', 'High']  # String
+            'Updated Time': ['06/30/2023 19:01:24', '06/30/2023 19:03:04', '06/30/2023 19:04:44'],
+            'Temperature': [61.71, 69.21,323.64],  # Float
+            'Count': [10, 15,18],  # Integer
+            'Status': [True, False,False],  # Boolean
+            'Description': ['Normal', 'High','Low']  # String
         })
         self.database = "test_database"
         self.table_name = "test_table"
 
-    @patch('database_connector.create_connection')
+    @patch('ltsm.data_reader.database_reader.create_connection')
     def test_setup_tables_with_various_data_types(self, mock_create_connection):
         # Mock the connection and cursor
         mock_conn = MagicMock()
@@ -33,8 +33,8 @@ class TestDatabaseConnector(unittest.TestCase):
         expected_schema = "(ts TIMESTAMP, Temperature FLOAT, Count INT, Status BOOL, Description STRING)"
         mock_cursor.execute.assert_any_call(f"CREATE TABLE IF NOT EXISTS {self.table_name} {expected_schema}")
 
-    @patch('database_connector.create_connection')
-    @patch('database_connector.pd.read_csv')
+    @patch('ltsm.data_reader.database_reader.create_connection')
+    @patch('ltsm.data_reader.database_reader.pd.read_csv')
     def test_insert_data_with_various_data_types(self, mock_read_csv, mock_create_connection):
         # Mock the connection and cursor
         mock_conn = MagicMock()
@@ -50,7 +50,7 @@ class TestDatabaseConnector(unittest.TestCase):
 
         # Check if data insertion commands were executed
         self.assertTrue(mock_cursor.execute.called)
-        self.assertGreater(mock_cursor.execute.call_count, 2)  # Check more than setup commands
+        self.assertEqual(mock_cursor.execute.call_count, len(self.input_df)+3)  # Check the number of execute calls
 
 if __name__ == '__main__':
     unittest.main()
