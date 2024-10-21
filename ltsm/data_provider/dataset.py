@@ -78,7 +78,8 @@ class TSPromptDataset(Dataset):
         y_end = y_begin + self.pred_len
         prompt= self.prompt[sequence_index]
         
-        seq_x = np.concatenate((prompt, self.data[sequence_index][x_begin:x_end]))
+        # prompt is a list, self.data[sequence_index][x_begin:x_end])is a numpy array with shape(seq_len,), like (366,)
+        seq_x = np.concatenate((prompt, self.data[sequence_index][x_begin:x_end])) 
         seq_x = torch.from_numpy(np.expand_dims(seq_x, -1))
         seq_y = torch.from_numpy(np.expand_dims(self.data[sequence_index][y_begin:y_end], -1))
         return seq_x, seq_y

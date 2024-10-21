@@ -869,7 +869,7 @@ def _get_csv_prompt(prompt_folder_path, data_name, idx_file_name):
         prompt_folder_path: str
         data_name: str
         idx_file_name: str, the index used in "prompt_generate_split.py"
-    Returna:
+    Returns:
         prompt_data: list. The single promot data will be concatenated with the time series data (e.g., data(336,), numpy.ndarry)
         In current case, the length of every prompt is 133.
     """
@@ -884,6 +884,7 @@ def _get_csv_prompt(prompt_folder_path, data_name, idx_file_name):
         prompt_path += '.csv'
         print(f"Prompt file {prompt_path} exists")
         prompt_data = pd.read_csv(prompt_path)
+        prompt_data.columns = prompt_data.columns.astype(int)
     elif os.path.exists(prompt_path + '.pth.tar'):
         prompt_path += '.pth.tar'
         prompt_data = torch.load(prompt_path)  

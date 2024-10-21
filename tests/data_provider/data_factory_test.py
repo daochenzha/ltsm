@@ -22,7 +22,6 @@ def setup_pth_file(tmpdir):
     assert data.shape == (1, 133)
     file_folder1 = tmpdir.mkdir("data_folder")
     file_folder = file_folder1.mkdir("data")
-    #file_folder = tmpdir.mkdir("data_folder").mkdir("data")
     file_path = os.path.join(file_folder, 'data_index_prompt.pth.tar')
     torch.save(data, file_path)
     return file_folder1, file_path
@@ -33,7 +32,7 @@ def setup_npz_file(tmpdir):
     file_folder1 = tmpdir.mkdir("data_folder")
     file_folder = file_folder1.mkdir("data")
     file_path = os.path.join(file_folder, 'data_index_prompt.npz')
-    np.savez(file_path, data=data.to_numpy())
+    np.savez(file_path, data=data.values, index=data.index, columns=data.columns)
     return file_folder1, file_path
 
 def test_get_csv_prompt_csv(setup_csv_file):
