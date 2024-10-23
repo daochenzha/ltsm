@@ -36,6 +36,40 @@ def setup(tmp_path):
         scale_on_train=True
     )
 
+# Save functions for threes different formats
+def save_csv(file_folder, data):
+    file_path = os.path.join(file_folder, 'mock_index_prompt.csv')
+    data.to_csv(file_path, index=False)
+    return file_path
+
+def save_pth(file_folder, data):
+    file_path = os.path.join(file_folder, 'mock_index_prompt.pth.tar')
+    torch.save(data, file_path)
+    return file_path
+
+def save_npz(file_folder, data):
+    file_path = os.path.join(file_folder, 'mock_index_prompt.npz')
+    np.savez(file_path, data=data.values, index=data.index, columns=data.columns)
+    return file_path
+
+@pytest.mark.parametrize("save_function, expected_shape", [
+    (save_csv, (133,)), 
+    (save_pth, (133,)), 
+    (save_npz, (133,))
+])
+def test_data_factory__get_prompt(setup, save_function, expected_shape):
+    data_path, prompt_data_path, prompt_data_folder, datasetFactory = setup
+    data = pd.DataFrame([range(133)])
+    save_function(str(prompt_data_folder), data)
+    print("prompt_data_folder", prompt_data_folder)
+    print("prompt_data_path", prompt_data_path)
+    print("data_path", data_path)
+    prompt_data = datasetFactory._DatasetFactory__get_prompt(str(prompt_data_path), str(data_path), "index")
+    assert len(prompt_data) == expected_shape[0]
+    arr = np.random.rand(366)
+    concatenated_result = np.concatenate((prompt_data, arr))
+    assert len(concatenated_result) == expected_shape[0] + len(arr)
+
 def test_data_factory_load_prompts_invalid_chars(setup):
     data_path, prompt_data_path, prompt_data_folder, datasetFactory = setup
     buff = ['rho (g/m**3)', 'rh (%)', 'speed (m/s)', 0, 1]
