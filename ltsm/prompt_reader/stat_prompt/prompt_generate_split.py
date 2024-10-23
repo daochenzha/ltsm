@@ -9,20 +9,9 @@ import matplotlib.pyplot as plt
 import sys, os
 import torch
 
-def parse_list(arg):
-    """parse a string of comma-separated values into a list
-    e.g. python ./ltsm/prompt_reader/stat_prompt/prompt_generate_split.py --dataset_name ETT-small, illness
-    """
-    return arg.split(',')
 
 def get_args():
     parser = argparse.ArgumentParser(description='LTSM')
-
-    parser.add_argument('--root_path', type=str, default='./datasets/', help='Root path for datasets')
-    parser.add_argument('--output_path', type=str, default='./prompt_bank/stat-prompt/prompt_data_split/', help='Output path for prompt data')
-    parser.add_argument('--dataset_name', type=parse_list, default=[])
-    parser.add_argument('--save_format', type=str, default='pth.tar',choices=["pth.tar", "csv", "npz"], help='The format to save the data')
-    parser.add_argument('--test', type=bool, default=False)
 
     parser.add_argument('--data_path', type=str, default='dataset/weather.csv')
     parser.add_argument('--data', type=str, default='custom')
@@ -52,25 +41,21 @@ def prompt_prune(pt):
 
 
 def prompt_generation_single(ts):
-    """Generate prompt data for the input time-series data
-    Args:
-        ts (pd.Series): input time-series data
-    """
     cfg = tsfel.get_features_by_domain()
     prompt = tsfel.time_series_features_extractor(cfg, ts)
     prompt = prompt_prune(prompt)
     return prompt
 
 def prompt_generation(ts, ts_name):
-    """Generate prompt data for the input time-series data
-    Args:
-        ts (pd.DataFrame): input time-series data
-        ts_name (str): name of the time-series data
-    """
+
+    print(ts.shape)
+
     if ts.shape[1] == 1:
+
         return None
 
     else:
+
         column_name = [name.replace("/", "-") for name in list(ts.columns)]
         prompt_buf_train = pd.DataFrame(np.zeros((133, ts.shape[1])), columns=column_name)
         prompt_buf_val = pd.DataFrame(np.zeros((133, ts.shape[1])), columns=column_name)
@@ -98,15 +83,9 @@ def prompt_generation(ts, ts_name):
     return prompt_buf_total
 
 
-def prompt_save(prompt_buf, output_path, data_name, save_format="pth.tar", ifTest=False):
-    """save prompts to three different files in the output path
-    Args:
-        prompt_buf (dict): dictionary containing prompts for train, val, and test splits
-        output_path (str): path to save the prompt data
-        data_name (str): name of the dataset
-        save_format (str): format to save the prompt data
-        ifTest (bool): if True, test if the saved prompt data is loaded back. Can be used during generating data.
-    """
+def prompt_save(prompt_buf, output_path):
+
+    print(prompt_buf["train"])
     if prompt_buf["train"].shape[1] == 1:
         # ipdb.set_trace()
         return None
@@ -126,49 +105,31 @@ def prompt_save(prompt_buf, output_path, data_name, save_format="pth.tar", ifTes
         # print("Export", prompt_test_fname, prompt_test.shape)
 
     else:
-        for split in ["train", "val", "test"]:
-            split_dir = os.path.join(output_path, split)
-            for index, col in prompt_buf[split].T.iterrows():
-                file_name = f"{data_name}_{index}_prompt.{save_format}"
-                file_path = os.path.join(split_dir, file_name)
-                # print("split_dir", split_dir)
-                # print("file_name", file_name)
-                # print("file_path", file_path)
-                prompt_data = col
-                prompt_data.columns = [index]
-                prompt_data = prompt_data.T
-                print("Type of prompt data", type(prompt_data), "Shape of prompt data", prompt_data.shape)
 
-                if save_format == "pth.tar":
-                    torch.save(prompt_data, file_path)
-                elif save_format == "csv":
-                    prompt_data.to_csv(file_path, index=False)  # use csv may result in some loss of precision
-                elif save_format == "npz":
-                    np.savez(file_path, data=prompt_data.values, index=prompt_data.index, name=prompt_data.name)
-                else:
-                    raise ValueError(f"Unsupported save format: {save_format}")
-                if ifTest:
-                    if save_format == "pth.tar":
-                        load_data = torch.load(file_path)
-                    elif save_format == "csv":
-                        load_data = pd.read_csv(file_path)
-                        if isinstance(load_data, pd.DataFrame):
-                            load_data = load_data.squeeze()
-                    elif save_format == "npz":
-                        loaded = np.load(file_path)
-                        load_data = pd.Series(data=loaded["data"], index=loaded["index"], name=loaded["name"].item())
-                        if isinstance(load_data, pd.DataFrame):
-                            load_data = load_data.squeeze()
-                    assert type(load_data) == type(prompt_data), f"Type mismatch: {type(load_data)} vs {type(prompt_data)}"  # type should be pd.Series
-                    assert load_data.shape == prompt_data.shape, f"Shape mismatch: {load_data.shape} vs {prompt_data.shape}"
-                    assert load_data.index.equals(prompt_data.index), "Index mismatch"
-                    assert load_data.name == prompt_data.name, f"Series names mismatch: {load_data.name} vs {prompt_data.name}"
-                    assert np.allclose(load_data.values, prompt_data.values, rtol=1e-8, atol=1e-8), "Data values mismatch"
-                    if save_format != "csv":
-                        assert load_data.equals(prompt_data), f"Data mismatch: {load_data} vs {prompt_data}"
-                    print("All tests passed for", file_path)
+        for index, col in prompt_buf["train"].T.iterrows():
 
-                print("Export", file_path, prompt_data.shape)
+            prompt_train_fname = os.path.join(output_path, "train", data_name + "_" + index + "_prompt.pth.tar")
+            prompt_train = col
+            prompt_train.columns = [index]
+            prompt_train = prompt_train.T
+            torch.save(prompt_train, prompt_train_fname)
+            print("Export", prompt_train_fname, prompt_train.shape)
+
+        for index, col in prompt_buf["val"].T.iterrows():
+            prompt_val_fname = os.path.join(output_path, "val", data_name + "_" + index + "_prompt.pth.tar")
+            prompt_val = col
+            prompt_val.columns = [index]
+            prompt_val = prompt_val.T
+            torch.save(prompt_val, prompt_val_fname)
+            print("Export", prompt_val_fname, prompt_val.shape)
+
+        for index, col in prompt_buf["test"].T.iterrows():
+            prompt_test_fname = os.path.join(output_path, "test", data_name + "_" + index + "_prompt.pth.tar")
+            prompt_test = col
+            prompt_test.columns = [index]
+            prompt_test = prompt_test.T
+            torch.save(prompt_test, prompt_test_fname)
+            print("Export", prompt_test_fname, prompt_test.shape)
 
 
 def data_import(path, format="feather"):
@@ -186,6 +147,9 @@ def data_import(path, format="feather"):
         data_dir = data_name[0:data_name.rfind("/")]
         if "date" in data.columns:
             data = data.drop("date", axis=1)
+        # print(data)
+        # data = data.value
+
 
     return data, data_name, data_dir
 
@@ -198,20 +162,18 @@ def create_data_dir(dir_name):
 
 if __name__ == "__main__":
 
-    args = get_args()
-    root_path = args.root_path
-    output_path = args.output_path
-    dataset_name = args.dataset_name
-    save_format = args.save_format
-    ifTest = args.test    
+    root_path = "./datasets/"
+    output_path = "./prompt_bank/stat-prompt/prompt_data_split/"
 
-    # if the dataset_name is not provided, use all the datasets in the dataset root path
-    if not dataset_name:
-        dataset_name = [name for name in os.listdir(root_path) if os.path.isdir(os.path.join(root_path, name))]
 
-    if len(dataset_name) == 0:
-        print("No dataset found in the root path.")
-        sys.exit(0)
+    dataset_name = [
+        "electricity",
+        "ETT-small",
+        "exchange_rate",
+        "illness",
+        "traffic",
+        "weather",
+    ]
 
     dataset_fullname = [os.path.join(root_path, name) for name in dataset_name]
     data_path_buf = []
@@ -231,7 +193,6 @@ if __name__ == "__main__":
         # print(path)
 
         data, data_name, data_dir = data_import(path, "csv")
-        print("*****************Data Name: ", data_name)
         # print("Data Shape:", data.shape)
         if data.shape[0] < 20:
             print(path, "Skip too short time-series data.", data.shape)
@@ -248,5 +209,5 @@ if __name__ == "__main__":
 
         prompt_data_buf = prompt_generation(data, data_name)
         if prompt_data_buf is not None:
-            prompt_save(prompt_data_buf, output_path, data_name, save_format,ifTest)
+            prompt_save(prompt_data_buf, output_path)
 
