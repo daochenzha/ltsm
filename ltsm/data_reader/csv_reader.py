@@ -77,14 +77,39 @@ def transform_csv_dataset(input_folder: str, output_folder: str):
 
 
 class CSVReader(BaseReader):
+    """
+    Represents a CSV Reader object for processing time-series data. 
+    
+    This class reads .csv files, fills missing values using linear interpolation, and drops any invalid columns. 
+    It assumes that the .csv file's columns represent time-series data, while each row corresponds to a data
+    instance or feature. 
+
+    Attributes:
+        module_id (str): The identifier for the base reader objects.
+        data_path (str): The file path where the .csv file is located.
+    """
     module_id = "csv"
     def __init__(self, data_path: str):
+        """
+        Initializes the CSVReader class.
+
+        Args:
+            data_path (str): The file path where the .csv file is located.
+        """
         super().__init__()
         self.data_path = data_path
 
     def fetch(self) -> pd.DataFrame:
-        # input: path
-        # output: DataFrame
+        """
+        Fetches data in the .csv file specified at data_path.
+
+        Reads the .csv file, fills missing values, and drops invalid columns.
+
+        Returns:
+            pd.DataFrame: The data from the .csv as a DataFrame.
+        """
+
+        # Check if file exists
         if not Path(self.data_path).is_file():
             raise FileNotFoundError(f"File not found at the specified path: {self.data_path}")
 
@@ -117,11 +142,21 @@ class CSVReader(BaseReader):
         return loaded_data
     
     def __is_datetime(self, label: str) -> bool:
+        """
+        Checks whether a column's label is in Pandas datetime format.
+        
+        Args:
+            label (str): The column label to check.
+
+        Returns:
+            bool: True if the column label is in datetime format, False otherwise.
+        """
         try:
             pd.to_datetime(label)
             return True
         except ValueError:
             return False
+        
 if __name__ == '__main__':
     input_folder = './datasets/DK/'
     output_folder = './datasets/DK_transformed/'

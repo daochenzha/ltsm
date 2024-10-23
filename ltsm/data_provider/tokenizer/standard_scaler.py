@@ -4,17 +4,37 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler as SKStandardScaler
 
 from ltsm.common.base_processor import BaseProcessor
+from typing import Tuple, List
 
 
 class StandardScaler(BaseProcessor):
+    """
+    Represents a Standard Scaler object that uses Sklearn's Standard Scaler for data processing.
+
+    Attributes:
+        module_id (str): The identifier for base processor objects.
+    """
     module_id = "standard_scaler"
     
     def __init__(self):
         self._scaler = None
 
-    def process(self, raw_data, train_data, val_data, test_data, fit_train_only=False):
-        scaled_train_data, scaled_val_data, scaled_test_data = [], [], []
+    def process(self, raw_data: np.ndarray, train_data: List[np.ndarray], val_data: List[np.ndarray], test_data: List[np.ndarray], fit_train_only:bool=False)->Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+        """
+        Standardizes the training, validation, and test sets by removing the mean and scaling to unit variance.
 
+        Args:
+            raw_data (np.ndarray): The raw data.
+            train_data (List[np.ndarray]): The list of training sequences.
+            val_data (List[np.ndarray]): The list of validation sequences.
+            test_data (List[np.ndarray]): The list of test sequences.
+            fit_train_only (bool): Indicates whether the datasets should be scaled based on the training data.
+
+        Returns:
+            Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+                A tuple of three lists containing the processed training, validation, and test data. 
+        """
+        scaled_train_data, scaled_val_data, scaled_test_data = [], [], []
         for raw_sequence, train_sequence, val_sequence, test_sequence in zip(
             raw_data,
             train_data,
@@ -38,19 +58,40 @@ class StandardScaler(BaseProcessor):
 
         return scaled_train_data, scaled_val_data, scaled_test_data
 
-    def inverse_process(self, data):
+    def inverse_process(self, data: np.ndarray)->np.ndarray:
+        """
+        Scales back the data to its original representation.
+
+        Args:
+            data (np.ndarray): The data to scale back.
+
+        Returns:
+            np.ndarray: The scaled back data.
+        """
         assert self._scaler is not None, "StandardScaler has not been fitted"
         raw_shape = data.shape
         data = self._scaler.inverse_transform(data.reshape(-1, 1))
 
         return data.reshape(raw_shape)
 
-    def save(self, save_dir):
+    def save(self, save_dir: str):
+        """
+        Saves the scaler to the save_dir directory as a Pickle file named processor.pkl.
+
+        Args:
+            save_dir (str): The directory where to store the scaler.
+        """
         save_path = os.path.join(save_dir, "processor.pkl")
         with open(save_path, 'wb') as f:
             pickle.dump(self._scaler, f)
 
     def load(self, save_dir):
+        """
+        Loads the scaler saved at the save_dir directory.
+
+        Args:
+            save_dir (str): The directory the scaler was saved.
+        """
         save_path = os.path.join(save_dir, "processor.pkl")
         with open(save_path, 'rb') as f:
             self._scaler = pickle.load(f)
