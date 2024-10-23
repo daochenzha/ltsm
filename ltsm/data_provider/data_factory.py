@@ -114,19 +114,30 @@ class DatasetFactory:
             # Monash
             prompt_name = data_name.split("/")[-1]
             prompt_name = prompt_name.replace(".tsf", "")
-            prompt_path = os.path.join(prompt_data_path, prompt_name, "T"+str(int(idx_file_name)+1)+"_prompt.pth.tar")
+            prompt_path = os.path.join(prompt_data_path, prompt_name, "T"+str(int(idx_file_name)+1)+"_prompt")
         else:
             # CSV and other
             prompt_name = data_name.split('/')[-2]+'/'+data_name.split('/')[-1].split('.')[0]
-            prompt_path = os.path.join(prompt_data_path,prompt_name+'_'+str(idx_file_name)+"_prompt.pth.tar")
+            prompt_path = os.path.join(prompt_data_path,prompt_name+'_'+str(idx_file_name)+"_prompt")
         
-        if not os.path.exists(prompt_path):
-            logging.error(f"Prompt file {prompt_path} does not exist")
+        # Check for the existence of the prompt file in different formats
+        if os.path.exists(prompt_path + '.csv'):
+            prompt_path += '.csv'
+            print(f"Prompt file {prompt_path} exists")
+            prompt_data = pd.read_csv(prompt_path)
+            prompt_data.columns = prompt_data.columns.astype(int)
+        elif os.path.exists(prompt_path + '.pth.tar'):
+            prompt_path += '.pth.tar'
+            prompt_data = torch.load(prompt_path)  
+        elif os.path.exists(prompt_path + '.npz'):
+            prompt_path += '.npz'
+            loaded_data = np.load(prompt_path)
+            prompt_data = pd.DataFrame(loaded_data['data']) # this should match the key saved in prompt_generate_split.py
+        else:
+            logging.error(f"Prompt file {prompt_path} does not exist in any supported format")
             return
-        
-        prompt_data = torch.load(prompt_path)
-        prompt_data = prompt_data.T[0]
-        
+        # after load the data, it should be (1, 133). 133 is decided in prompt_generate_split.py
+        prompt_data = prompt_data.T[0]  # should be (133,)
         prompt_data = [ prompt_data.iloc[i] for i in range(len(prompt_data)) ]
         return prompt_data
 
