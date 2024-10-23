@@ -91,41 +91,43 @@ class DatasetFactory:
         ext = os.path.splitext(data_path)[-1]
         return reader_dict[ext[1:]](data_path).fetch()
     
-    def _get_csv_prompt(prompt_folder_path, data_name, idx_file_name):
+    def __get_prompt(self, prompt_data_path:str, data_name: str, idx_file_name: str) -> List[np.float64]:
         """
-        Args:
-            prompt_folder_path: str
-            data_name: str
-            idx_file_name: str, the index used in "prompt_generate_split.py"
-        Returns:
-            prompt_data: list. The single promot data will be concatenated with the time series data (e.g., data(336,), numpy.ndarry)
-            In current case, the length of every prompt is 133.
+            Private helper function to load prompt data files.
+
+            Args:
+                prompt_data_path (str): The path to the directory where the prompt data files are stored.
+                data_name (str): The name of the data source.
+                idx_file_name (str): The row label corresponding to the data the prompt file was generated from.
+
+            Returns:
+                List[np.float64]: The raw prompt data.
         """
-        data_path = data_name.split('/')[-2]+'/'+data_name.split('/')[-1].split('.')[0]
-        print("=============",data_path)
+        # Prompt file name replaces '/' in row labels with '-' 
         idx_file_name = idx_file_name.replace("/", "-")
+
+        # Certain characters cannot be used in file names
         idx_file_name = idx_file_name.replace("**", "_")
         idx_file_name = idx_file_name.replace("%", "_")
-
-        prompt_path = os.path.join(prompt_folder_path,data_path+'_'+str(idx_file_name)+"_prompt")
-        if os.path.exists(prompt_path + '.csv'):
-            prompt_path += '.csv'
-            print(f"Prompt file {prompt_path} exists")
-            prompt_data = pd.read_csv(prompt_path)
-            prompt_data.columns = prompt_data.columns.astype(int)
-        elif os.path.exists(prompt_path + '.pth.tar'):
-            prompt_path += '.pth.tar'
-            prompt_data = torch.load(prompt_path)  
-        elif os.path.exists(prompt_path + '.npz'):
-            prompt_path += '.npz'
-            loaded_data = np.load(prompt_path)
-            prompt_data = pd.DataFrame(loaded_data['data']) # this should match the key saved in prompt_generate_split.py
+        
+        if os.path.split(os.path.dirname(data_name))[-1] == "monash":
+            # Monash
+            prompt_name = data_name.split("/")[-1]
+            prompt_name = prompt_name.replace(".tsf", "")
+            prompt_path = os.path.join(prompt_data_path, prompt_name, "T"+str(int(idx_file_name)+1)+"_prompt.pth.tar")
         else:
-            print(f"Prompt file {prompt_path} does not exist in any supported format")
+            # CSV and other
+            prompt_name = data_name.split('/')[-2]+'/'+data_name.split('/')[-1].split('.')[0]
+            prompt_path = os.path.join(prompt_data_path,prompt_name+'_'+str(idx_file_name)+"_prompt.pth.tar")
+        
+        if not os.path.exists(prompt_path):
+            logging.error(f"Prompt file {prompt_path} does not exist")
             return
-        # after load the data, it should be (1, 133)
-        prompt_data = prompt_data.T[0]  # Here should be (133,)
-        prompt_data = [ prompt_data.iloc[i] for i in range(len(prompt_data)) ]  # Here is a list of 133 elements
+        
+        prompt_data = torch.load(prompt_path)
+        prompt_data = prompt_data.T[0]
+        
+        prompt_data = [ prompt_data.iloc[i] for i in range(len(prompt_data)) ]
         return prompt_data
 
     
